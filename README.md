@@ -2,7 +2,7 @@
 
 A modern web application for tracking personal finances, managing wallets, and monitoring transactions with a clean, intuitive interface.
 
-![Monetra Dashboard Preview](https://placeholder-for-screenshot.com)
+<!-- ![Monetra Dashboard Preview](https://placeholder-for-screenshot.com) -->
 
 ## Overview
 
@@ -44,7 +44,7 @@ Monetra helps you take control of your personal finances by providing tools to t
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/yourusername/monetra.git
+   git clone https://github.com/zakariae-bakkari/Monetra.git
    cd monetra
    ```
 
@@ -107,4 +107,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-*Made with ❤️ by [Your Name]*
+*Made with ❤️ by [zakariae-bakkari]*
