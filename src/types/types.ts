@@ -14,29 +14,32 @@ export type Category =
 
 export type TransactionType = "Income" | "Expense";
 
-export type WalletType = 
-  | "Cash"
-  | "CIH"
-  | "AttijariWafa"
-  | "AlBarid";
+
 
 export interface Wallet {
-  id: string;
-  type: WalletType;
-  balance: number;
+  $id: string;
   name: string;
+  type: string;
+  balance: number;
+  userId: string;
+  $createdAt?: Date;
+  $updatedAt?: Date;
+  transactions?: string[]; // This is the Appwrite relation field name
 }
 
 export interface Transaction {
-  id: string;
-  date: Date;
+  $id: string;
   amount: number;
   type: TransactionType;
-  category: Category;
+  wallets: string; 
+  userId: string;
+  date: Date;
   reason?: string;
-  expectedReturnDate?: Date | null;
   notes?: string;
-  wallets: string; // This is the Appwrite relation field name
+  category: Category;
+  expectedReturnDate?: Date | null;
+  $createdAt: Date;
+  $updatedAt: Date;
 }
 
 export interface DailyTransactionSummary {

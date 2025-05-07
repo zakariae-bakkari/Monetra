@@ -17,6 +17,12 @@ const databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
 const walletsCollectionId = process.env.NEXT_PUBLIC_WALLETS_COLLECTION_ID;
 const transactionsCollectionId =
   process.env.NEXT_PUBLIC_TRANSACTIONS_COLLECTION_ID;
+  console.log(
+    "Appwrite Config: "+ endpoint,
+    projectId,
+    databaseId,
+    walletsCollectionId,
+    transactionsCollectionId)
 
 // Create client with the fixed values
 const client = new Client().setEndpoint(endpoint).setProject(projectId);
@@ -71,6 +77,7 @@ export class AppwriteService {
   async getCurrentUser() {
     try {
       const user = await account.get();
+      console.log(user);
       return user;
     } catch (error) {
       throw error;

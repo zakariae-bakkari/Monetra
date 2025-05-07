@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Monetra: Personal Finance Tracker
+
+A modern web application for tracking personal finances, managing wallets, and monitoring transactions with a clean, intuitive interface.
+
+![Monetra Dashboard Preview](https://placeholder-for-screenshot.com)
+
+## Overview
+
+Monetra helps you take control of your personal finances by providing tools to track expenses, monitor budgets, and visualize your financial health across multiple wallets and accounts.
+
+## Features
+
+- **Transaction Management**: Log income and expenses with detailed categorization
+- **Multiple Wallets**: Track different accounts, cash, credit cards, and savings
+- **Calendar View**: Visualize your financial activity on a daily, weekly, and monthly basis
+- **Dashboard Analytics**: Get insights into your spending habits with charts and summaries
+- **Expected Returns**: Keep track of loans and money owed to you with due dates
+- **Dark/Light Mode**: Choose your preferred theme for comfortable use
+- **Local & Cloud Storage**: Store your data securely with Appwrite backend
+
+## Tech Stack
+
+- React/Next.js with TypeScript
+- Tailwind CSS with shadcn/ui components
+- Appwrite for authentication and data storage
+- date-fns for date handling
+- Recharts for data visualization
+
+## Screenshots
+
+### Dashboard
+*Dashboard with financial summary, wallet overview, and spending analytics*
+
+### Transaction List
+*Searchable and filterable list of all your transactions*
+
+### Calendar View
+*Calendar showing daily financial activity with popover details*
+
+### Profile & Settings
+*Account management and personalization options*
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository
+   ```bash
+   git clone https://github.com/yourusername/monetra.git
+   cd monetra
+   ```
+
+2. Install dependencies
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+3. Set up environment variables
+   ```
+   # Create a .env.local file with your Appwrite credentials
+   NEXT_PUBLIC_APPWRITE_ENDPOINT=your-appwrite-endpoint
+   NEXT_PUBLIC_APPWRITE_PROJECT=your-project-id
+   NEXT_PUBLIC_APPWRITE_DATABASE_ID=your-database-id
+   ```
+
+4. Run the development server
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Deployment
+
+The app can be deployed to Vercel, Netlify, or any hosting service that supports Next.js applications.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Future Enhancements
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Budget planning and tracking features
+- Recurring transaction automation
+- Financial goal setting and tracking
+- Mobile app version
+- Data import/export from financial institutions
+- Reports and additional analytics
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## License
 
-## Learn More
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-To learn more about Next.js, take a look at the following resources:
+## Acknowledgements
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Next.js](https://nextjs.org/) for the React framework
+- [Tailwind CSS](https://tailwindcss.com/) for styling
+- [shadcn/ui](https://ui.shadcn.com/) for UI components
+- [Appwrite](https://appwrite.io/) for backend services
+- [Recharts](https://recharts.org/) for data visualization
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+*Made with ❤️ by [Your Name]*
