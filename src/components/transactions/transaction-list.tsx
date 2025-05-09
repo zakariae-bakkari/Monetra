@@ -5,7 +5,7 @@ import { TransactionCard } from "@src/components/transactions/transaction-card";
 import { TransactionDetails } from "@src/components/transactions/transaction-details";
 import appwriteService from "@src/lib/store";
 import { Input } from "@src/components/ui/input";
-import { Calendar } from "@src/components/ui/calendar";
+
 import {
   Select,
   SelectContent,
@@ -24,6 +24,7 @@ import { CalendarIcon, Search, SlidersHorizontal, X } from "lucide-react";
 import { Badge } from "@src/components/ui/badge";
 import { account } from "@src/lib/appwrite.config";
 import { Transaction, Wallet } from "@src/types/types";
+import { Calendar } from "../ui/calendar";
 
 export function TransactionList() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);

@@ -292,7 +292,7 @@ export default function Profile() {
                </CardHeader>
                <CardContent className="space-y-4">
                   <Button variant="outline" className="w-full justify-start" asChild>
-                     <Link href="/transaction">
+                     <Link href="/transactions">
                         <CreditCard className="mr-2 h-4 w-4" />
                         View Transactions
                      </Link>
@@ -307,12 +307,6 @@ export default function Profile() {
                      <Link href="/calendar">
                         <Calendar className="mr-2 h-4 w-4" />
                         Calendar View
-                     </Link>
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" asChild>
-                     <Link href="/settings/security">
-                        <Shield className="mr-2 h-4 w-4" />
-                        Security Settings
                      </Link>
                   </Button>
                </CardContent>
