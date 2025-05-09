@@ -6,6 +6,7 @@ import appwriteService from "@src/lib/appwrite.config";
 import { AuthProvider } from "@src/context/authContext";
 import { ThemeProvider } from "@src/components/theme-provider";
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from "@vercel/analytics/next"
 
 
 const geistSans = Geist({
@@ -47,6 +48,7 @@ export default function ProtectedLayout({
               >
                 {children}
                 <SpeedInsights />
+                <Analytics />
               </ThemeProvider>
             </>
           )}
