@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import appwriteService from "@src/lib/appwrite.config";
 import { AuthProvider } from "@src/context/authContext";
 import { ThemeProvider } from "@src/components/theme-provider";
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,11 +40,14 @@ export default function ProtectedLayout({
           {!loader && (
             <>
               <ThemeProvider
-              attribute={"class"}
-              defaultTheme={"system"}
-              enableSystem
-              disableTransitionOnChange
-              >{children}</ThemeProvider>
+                attribute={"class"}
+                defaultTheme={"system"}
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+                <SpeedInsights />
+              </ThemeProvider>
             </>
           )}
         </AuthProvider>
