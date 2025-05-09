@@ -16,14 +16,15 @@ import {
   CardContent,
   CardDescription
 } from "@src/components/ui/card";
-import { Pencil, Trash2, BanknoteIcon, Calendar, Tag, FileText, Wallet, ArrowDown, ArrowUp } from "lucide-react";
+import { Pencil, Trash2, BanknoteIcon, Calendar, Tag, FileText, Wallet2, ArrowDown, ArrowUp } from "lucide-react";
 import appwriteService from "@src/lib/store";
 import { useToast } from "@/hooks/use-toast";
+import { Transaction, Wallet } from "@src/types/types";
 
 interface TransactionDetailsProps {
   transactionId: string | null;
-  transactions: any[];
-  wallets: any[];
+  transactions: Transaction[];
+  wallets: Wallet[];
   onRefresh: () => Promise<void>;
   onEdit: (id: string) => void;
   onClose: () => void;
@@ -140,7 +141,7 @@ export function TransactionDetails({
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <Wallet className="h-5 w-5 text-muted-foreground" />
+                  <Wallet2 className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <CardDescription>Wallet</CardDescription>
                     <div>{wallet?.name || "Unknown"}</div>

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { TransactionCard } from "@src/components/transactions/transaction-card";
 import { TransactionDetails } from "@src/components/transactions/transaction-details";
-import { useRouter } from "next/navigation";
 import appwriteService from "@src/lib/store";
 import { Input } from "@src/components/ui/input";
 import { Calendar } from "@src/components/ui/calendar";
@@ -24,11 +23,11 @@ import { format, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
 import { CalendarIcon, Search, SlidersHorizontal, X } from "lucide-react";
 import { Badge } from "@src/components/ui/badge";
 import { account } from "@src/lib/appwrite.config";
+import { Transaction, Wallet } from "@src/types/types";
 
 export function TransactionList() {
-  const router = useRouter();
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [wallets, setWallets] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTransactionId, setSelectedTransactionId] = useState<
     string | null
@@ -42,8 +41,8 @@ export function TransactionList() {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [showFilters, setShowFilters] = useState(false);
   // Edit transaction
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [transactionToEdit, setTransactionToEdit] = useState<any | null>(null);
+  // const [showEditDialog, setShowEditDialog] = useState(false);
+  // const [transactionToEdit, setTransactionToEdit] = useState<any | null>(null);
 
   const fetchData = async () => {
     try {
@@ -73,8 +72,8 @@ export function TransactionList() {
     const transaction = transactions.find((t) => t.$id === id);
     if (transaction) {
       setSelectedTransactionId(null);
-      setShowEditDialog(true);
-      setTransactionToEdit(transaction);
+      // setShowEditDialog(true);
+      // setTransactionToEdit(transaction);
     }
   };
 

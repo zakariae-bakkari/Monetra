@@ -1,63 +1,33 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@src/components/ui/card";
 import { 
   BadgeDollarSign, 
   ArrowUpRight, 
   ArrowDownRight,
   CalendarClock,
-  Loader2
 } from "lucide-react";
 import { format, isAfter } from "date-fns";
 import { cn } from "@src/lib/utils";
 import { Badge } from "@src/components/ui/badge";
-import appwriteService from "@src/lib/store";
-import { account } from "@src/lib/appwrite.config";
+import { Transaction } from "@/types/types";
 
-export function UpcomingReturns() {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const user = await account.get();
-        const data = await appwriteService.fetchTransactions(user.$id);
-        setTransactions(data);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchTransactions();
-  }, []);
-  
-  const now = new Date();
+interface UpcomingReturnsProps {
+  transactions: Transaction[];
+}
+
+export function UpcomingReturns({ transactions }: UpcomingReturnsProps) {
+  const currentDateTime = useMemo(() => new Date(), []);
   
   const upcomingReturns = useMemo(() => {
     return transactions
-      .filter(t => t.expectedReturnDate && isAfter(new Date(t.expectedReturnDate), now))
+      .filter(t => t.expectedReturnDate && isAfter(new Date(t.expectedReturnDate), currentDateTime))
       .sort((a, b) => {
         return new Date(a.expectedReturnDate!).getTime() - new Date(b.expectedReturnDate!).getTime();
       })
       .slice(0, 5); // Limit to first 5
-  }, [transactions, now]);
-  
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Upcoming Returns</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 flex justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    );
-  }
+  }, [transactions, currentDateTime]);
   
   if (upcomingReturns.length === 0) {
     return (
@@ -108,7 +78,7 @@ export function UpcomingReturns() {
                   ? "text-green-600 dark:text-green-400" 
                   : "text-orange-600 dark:text-orange-400"
               )}>
-                ${transaction.amount.toFixed(2)}
+                {transaction.amount.toFixed(2)} MAD
               </div>
             </div>
           ))}

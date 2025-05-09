@@ -1,9 +1,10 @@
 "use client";
-import './globals.css';
+import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import { useEffect, useState } from "react";
 import appwriteService from "@src/lib/appwrite.config";
 import { AuthProvider } from "@src/context/authContext";
+import { ThemeProvider } from "@src/components/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,16 +16,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-
 export default function ProtectedLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [authStatus,setAuthStatus  ] = useState(false);
+  const [authStatus, setAuthStatus] = useState(false);
   const [loader, setLoader] = useState(true);
   useEffect(() => {
-    appwriteService.isLoggedIn().then(setAuthStatus).finally(()=>setLoader(false));
+    appwriteService
+      .isLoggedIn()
+      .then(setAuthStatus)
+      .finally(() => setLoader(false));
   }, []);
   return (
     <html lang="en">
@@ -34,9 +37,12 @@ export default function ProtectedLayout({
         <AuthProvider value={{ authStatus, setAuthStatus }}>
           {!loader && (
             <>
-            <main className="">
-              {children}
-            </main>
+              <ThemeProvider
+              attribute={"class"}
+              defaultTheme={"system"}
+              enableSystem
+              disableTransitionOnChange
+              >{children}</ThemeProvider>
             </>
           )}
         </AuthProvider>

@@ -21,12 +21,33 @@ import {
   Briefcase
 } from "lucide-react";
 import { account } from "@src/lib/appwrite.config";
-import appwriteService from "@src/lib/store";
-import { Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTrigger } from "@src/components/ui/dialog";
-import { DialogContent, DialogTitle } from "@src/components/transactions/transaction-new-dialog";
+import { 
+  Dialog, 
+  DialogClose, 
+  DialogContent,
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from "@src/components/ui/dialog";
+
+interface UserData {
+  $id: string;
+  $createdAt: string;
+  $updatedAt: string;
+  name: string;
+  email: string;
+  phone: string;
+  emailVerification: boolean;
+  phoneVerification: boolean;
+  status: boolean;
+  accessedAt: string;
+  passwordUpdate: string;
+}
 
 export default function SettingsPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingPassword, setUpdatingPassword] = useState(false);
   const [updatingEmail, setUpdatingEmail] = useState(false);
@@ -37,6 +58,7 @@ export default function SettingsPage() {
     const initializeData = async () => {
       try {
         const userData = await account.get();
+        console.log("User data:", userData);
         setUser(userData);
       } catch (error) {
         console.error("Error initializing data:", error);
@@ -58,7 +80,7 @@ export default function SettingsPage() {
     setUpdatingPassword(true);
     
     const formData = new FormData(event.currentTarget);
-    const oldPassword = formData.get('oldPassword') as string;
+    // const oldPassword = formData.get('oldPassword') as string;
     const newPassword = formData.get('newPassword') as string;
     const confirmPassword = formData.get('confirmPassword') as string;
     
@@ -99,9 +121,9 @@ export default function SettingsPage() {
     event.preventDefault();
     setUpdatingEmail(true);
     
-    const formData = new FormData(event.currentTarget);
-    const newEmail = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    // const formData = new FormData(event.currentTarget);
+    // const newEmail = formData.get('email') as string;
+    // const password = formData.get('password') as string;
     
     try {
       // This is a placeholder - you'll need to implement the actual email change in your Appwrite service
@@ -177,7 +199,7 @@ export default function SettingsPage() {
                 <form className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue={user.name} />
+                    <Input id="name" defaultValue={user?.name} />
                   </div>
                   
                   <div className="flex justify-end">
@@ -201,7 +223,7 @@ export default function SettingsPage() {
                 <form onSubmit={handleChangeEmail} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="current-email">Current Email</Label>
-                    <Input id="current-email" value={user.email} disabled />
+                    <Input id="current-email" value={user?.email} disabled />
                   </div>
                   
                   <div className="space-y-2">

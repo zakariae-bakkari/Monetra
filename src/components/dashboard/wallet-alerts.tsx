@@ -1,32 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@src/components/ui/alert";
 import { AlertTriangle, TrendingDown, CreditCard, ShieldAlert } from "lucide-react";
-import appwriteService from "@src/lib/store";
-import { account } from "@src/lib/appwrite.config";
+import { Wallet } from "@/types/types";
 
-export function WalletAlerts() {
-  const [wallets, setWallets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchWallets = async () => {
-      try {
-        const user = await account.get();
-        const data = await appwriteService.fetchWallets(user.$id);
-        setWallets(data);
-      } catch (error) {
-        console.error("Error fetching wallets:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchWallets();
-  }, []);
+interface WalletAlertsProps {
+  wallets: Wallet[];
+}
 
-  if (loading) return null;
+export function WalletAlerts({ wallets }: WalletAlertsProps) {
   if (!wallets || wallets.length === 0) return null;
 
   const alerts = [];
@@ -92,8 +74,8 @@ export function WalletAlerts() {
   return (
     <div className="space-y-4">
       {alerts.map((alert, index) => (
-        <Alert key={index} variant={alert.type === "error" ? "destructive" : "warning"}>
-          <div className="flex items-center gap-2">
+        <Alert key={index} variant={alert.type === "error" ? "destructive" : "default"}>
+          <div className="flex items-center gap-2">        
             {alert.icon}
             <AlertTitle>{alert.title}</AlertTitle>
           </div>

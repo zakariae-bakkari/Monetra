@@ -1,4 +1,4 @@
-import { Query, ID } from "appwrite";
+import { Query, ID, Models } from "appwrite";
 import { Transaction, Wallet } from "@/types/types";
 import { databases, DB_ID, WALLETS_COLLECTION_ID, TRANSACTIONS_COLLECTION_ID } from "./appwrite.config";
 
@@ -22,7 +22,7 @@ export class AppwriteService {
 
   async fetchWallets(userId: string) {
     try {
-      const res = await databases.listDocuments(
+      const res = await databases.listDocuments<Wallet>(
         DB_ID,
         WALLETS_COLLECTION_ID,
         [Query.equal("userId", userId)]
@@ -36,7 +36,7 @@ export class AppwriteService {
 
   async fetchWallet(id: string) {
     try {
-      const doc = await databases.getDocument(
+      const doc = await databases.getDocument<Wallet>(
         DB_ID,
         WALLETS_COLLECTION_ID,
         id
@@ -80,13 +80,23 @@ export class AppwriteService {
   async createTransaction(data: Omit<Transaction, '$id' | 'userId'>, userId: string) {
     try {
       // Ensure dates are properly formatted for Appwrite
-      const formattedData = {
+      const formattedData: Omit<Transaction, 'hasExpectedReturnDate'> & { userId: string } = {
         ...data,
         date: data.date instanceof Date ? data.date.toISOString() : data.date,
-        expectedReturnDate: data.expectedReturnDate instanceof Date ? 
-          data.expectedReturnDate.toISOString() : data.expectedReturnDate,
         userId
       };
+
+      // Only include expectedReturnDate if hasExpectedReturnDate is true
+      if (data.hasExpectedReturnDate && data.expectedReturnDate) {
+        formattedData.expectedReturnDate = data.expectedReturnDate instanceof Date ? 
+          data.expectedReturnDate.toISOString() : data.expectedReturnDate;
+      } else {
+        // If hasExpectedReturnDate is false or undefined, make sure expectedReturnDate is not included
+        delete formattedData.expectedReturnDate;
+      }
+
+      // Remove the hasExpectedReturnDate field as it's not part of the Appwrite schema
+      delete formattedData.hasExpectedReturnDate;
 
       const doc = await databases.createDocument(
         DB_ID,
@@ -103,7 +113,7 @@ export class AppwriteService {
 
   async fetchTransactions(userId: string) {
     try {
-      const res = await databases.listDocuments(
+      const res = await databases.listDocuments<Transaction>(
         DB_ID,
         TRANSACTIONS_COLLECTION_ID,
         [Query.equal("userId", userId), Query.limit(50)]  // Add limit as part of the query
@@ -127,12 +137,12 @@ export class AppwriteService {
 
   async fetchTransaction(id: string) {
     try {
-      const doc = await databases.getDocument(
+      const transaction:Models.Document = await databases.getDocument(
         DB_ID,
         TRANSACTIONS_COLLECTION_ID,
         id
       );
-      return doc;
+      return transaction;
     } catch (error) {
       console.error("Error fetching transaction:", error);
       throw error;

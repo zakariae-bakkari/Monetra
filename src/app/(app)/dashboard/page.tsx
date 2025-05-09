@@ -13,13 +13,13 @@ import appwriteService from "@/lib/store"; // Import the direct service instead 
 import { Button } from "@/components/ui/button";
 import { ArrowUpFromLine, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Transaction } from "@/types/types";
+import { Transaction, Wallet } from "@/types/types";
 
 export default function DashboardPage() {
   const currentMonth = format(new Date(), "MMMM yyyy");
   // State to hold wallets and transactions
-  const [wallets, setWallets] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [hasLocalData, setHasLocalData] = useState(false);
@@ -159,7 +159,7 @@ export default function DashboardPage() {
         </div>
         
         <div className="mb-8">
-          <SummaryCards transactions={transactions} />
+          <SummaryCards transactions={transactions} wallets={wallets} />
         </div>
       </div>
       

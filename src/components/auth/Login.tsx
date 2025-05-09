@@ -4,6 +4,7 @@ import appwriteService from "@src/lib/appwrite.config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, {FormEvent, useState} from "react";
+import { Input } from "../ui/input";
 
 const Login = () => {
    const [fomeData, setFormData] = useState({
@@ -25,14 +26,14 @@ const Login = () => {
          } else {
             setError("User not found");
          }
-      }catch (error: any) {
-            setError(error.message); // set the error message if an error occurs
+      }catch (error: unknown) {
+            setError(error instanceof Error ? error.message : "An unknown error occurred"); // set the error message if an error occurs
       }
 
    }
 
    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target; // the name of the input field and its value
+      const { name, value } = e.target; // the name of the Input field and its value
       setFormData((prev) => ({
          ...prev,
          [name]: value, // update the state with the new value
@@ -40,11 +41,11 @@ const Login = () => {
    }
 
    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-         <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-xl shadow-lg">
+      <div className="flex min-h-screen items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+         <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-xl shadow-lg">
          <div className="text-center">
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Login to your account</h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <h2 className="mt-6 text-3xl font-extrabold text-">Login to your account</h2>
+            <p className="mt-2 text-sm text-">
             Or{' '}
             <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
                need to create an account?
@@ -66,13 +67,13 @@ const Login = () => {
             <div className="rounded-md shadow-sm space-y-4">
             <div>
                <label htmlFor="email-address" className="sr-only">Email address</label>
-               <input
+               <Input
                id="email-address"
                name="email"
                type="email"
                autoComplete="email"
                required
-               className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+               className="appearance-none rounded-md relative block w-full px-3 py-3 border  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                placeholder="Email address"
                value={fomeData.email}
                onChange={handleChange}
@@ -80,13 +81,13 @@ const Login = () => {
             </div>
             <div>
                <label htmlFor="password" className="sr-only">Password</label>
-               <input
+               <Input
                id="password"
                name="password"
                type="password"
                autoComplete="current-password"
                required
-               className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+               className="appearance-none rounded-md relative block w-full px-3 py-3 border  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                placeholder="Password"
                value={fomeData.password}
                onChange={handleChange}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import * as z from "zod";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -32,7 +31,8 @@ import {
 import { Checkbox } from "@src/components/ui/checkbox";
 import { Textarea } from "@src/components/ui/textarea";
 import appwriteService from "@src/lib/store";
-
+import { Wallet } from "@src/types/types";
+import { UseFormReturn } from "react-hook-form";
 export const transactionFormSchema = z
   .object({
     date: z.date({
@@ -46,7 +46,7 @@ export const transactionFormSchema = z
     category: z.string().min(1, "Please select a category"),
     wallets: z.string().min(1, "Please select a wallet"),
     reason: z.string().optional(),
-    expectedReturnDate: z.boolean().default(false),
+    hasExpectedReturnDate: z.boolean().default(false),
     expectedReturnDate: z.date().optional().nullable(),
     notes: z.string().optional(),
   })
@@ -84,11 +84,10 @@ export const transactionFormSchema = z
   });
 
 export type FormValues = z.infer<typeof transactionFormSchema>;
-
 interface TransactionFormProps {
-  form: any; // Using any for react-hook-form's form
+  form: UseFormReturn<FormValues>;
   onSubmit: (data: FormValues) => Promise<void>;
-  wallets: any[];
+  wallets: Wallet[];
   isLoading?: boolean;
   onCancel?: () => void;
 }
@@ -115,7 +114,7 @@ export function TransactionForm({
     "Other",
   ];
 
-  const watchexpectedReturnDate = form.watch("expectedReturnDate");
+  const watchHasExpectedReturnDate = form.watch("hasExpectedReturnDate");
 
   return (
     <Form {...form}>
@@ -288,7 +287,7 @@ export function TransactionForm({
 
         <FormField
           control={form.control}
-          name="expectedReturnDate"
+          name="hasExpectedReturnDate"
           render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0">
               <FormControl>
@@ -306,7 +305,7 @@ export function TransactionForm({
           )}
         />
 
-        {watchexpectedReturnDate && (
+        {watchHasExpectedReturnDate && (
           <FormField
             control={form.control}
             name="expectedReturnDate"

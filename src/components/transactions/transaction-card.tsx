@@ -8,11 +8,11 @@ import {
 } from "@src/components/ui/card";
 import { Badge } from "@src/components/ui/badge";
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
-import { Transaction } from "@/types/types";
+import { Transaction, Wallet } from "@/types/types";
 
 interface TransactionCardProps {
   transaction: Transaction;
-  wallet?: any;
+  wallet?: Wallet;
   onClick?: () => void;
 }
 

@@ -1,141 +1,143 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Category } from "@/types/types";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { useState, useMemo } from "react";
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  Tooltip, 
+  ResponsiveContainer, 
+  Legend
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@src/components/ui/card";
-import { startOfMonth, endOfMonth } from "date-fns";
-import appwriteService from "@src/lib/store";
-import { account } from "@src/lib/appwrite.config";
+import { Transaction } from "@/types/types";
 
-interface ChartData {
-  name: string;
-  value: number;
+// Define a custom type for chart data that's compatible with recharts
+interface ChartCategorySummary {
+  category: string;
+  amount: number;
+  percentage: number;
+}
+
+interface CategoryPieChartProps {
+  transactions: Transaction[];
 }
 
 const COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  // Add more colors if needed
+  '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF',
+  '#FF6B6B', '#4ECDC4', '#C7F464', '#FF9F1C', '#CBB3E6',
+  '#81B29A', '#F2CC8F'
 ];
 
-export function CategoryPieChart() {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
+  const [view, setView] = useState<'expense' | 'income'>('expense');
   
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const user = await account.get();
-        const data = await appwriteService.fetchTransactions(user.$id);
-        setTransactions(data);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const chartData = useMemo(() => {
+    const categoryData = transactions
+      .filter(t => t.type === (view === 'expense' ? 'Expense' : 'Income'))
+      .reduce((acc, transaction) => {
+        const category = transaction.category;
+        
+        if (!acc[category]) {
+          acc[category] = 0;
+        }
+        
+        acc[category] += transaction.amount;
+        return acc;
+      }, {} as Record<string, number>);
     
-    fetchTransactions();
-  }, []);
-  
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  
-  // Filter transactions for the current month and only expenses
-  const monthlyExpenses = useMemo(() => 
-    transactions.filter(transaction => {
-      const date = new Date(transaction.date);
-      return date >= monthStart && date <= monthEnd && transaction.type === "Expense";
-    }),
-    [transactions, monthStart, monthEnd]
-  );
-  
-  // Group by category and sum
-  const categoryData = useMemo(() => {
-    const categorySums: Record<Category, number> = {} as Record<Category, number>;
+    // Calculate total for percentages
+    const total = Object.values(categoryData).reduce((sum, amount) => sum + amount, 0);
     
-    monthlyExpenses.forEach(transaction => {
-      if (!categorySums[transaction.category]) {
-        categorySums[transaction.category] = 0;
-      }
-      categorySums[transaction.category] += transaction.amount;
-    });
-    
-    // Convert to array format for chart
-    return Object.entries(categorySums)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [monthlyExpenses]);
-  
-  // Format for tooltip
-  const formatTooltip = (value: number) => {
-    return `$${value.toFixed(2)}`;
+    // Format data for the pie chart
+    const data: ChartCategorySummary[] = Object.entries(categoryData).map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: total ? (amount / total) * 100 : 0
+    }));
+
+    // Sort by amount descending
+    return data.sort((a, b) => b.amount - a.amount);
+  }, [transactions, view]);
+
+  // Define the tooltip type more precisely
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: Array<{
+      payload: ChartCategorySummary;
+      value: number;
+    }>;
+  }
+
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-background p-3 border rounded-md shadow-md">
+          <p className="font-medium">{data.category}</p>
+          <p>{`Amount: ${data.amount.toFixed(2)} MAD`}</p>
+          <p>{`${data.percentage.toFixed(2)}% of ${view}`}</p>
+        </div>
+      );
+    }
+    return null;
   };
-  
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Expense Categories</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  if (categoryData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Expense Categories</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center">
-          <p className="text-muted-foreground text-center">
-            No expense data available for this month
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Expense Categories</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Category Breakdown</CardTitle>
+        <div className="flex space-x-2">
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${
+              view === 'expense' 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-secondary text-secondary-foreground'
+            }`}
+            onClick={() => setView('expense')}
+          >
+            Expenses
+          </button>
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${
+              view === 'income' 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-secondary text-secondary-foreground'
+            }`}
+            onClick={() => setView('income')}
+          >
+            Income
+          </button>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px]">
+      <CardContent className="h-[300px]">
+        {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={categoryData}
+                data={chartData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                innerRadius={60}
                 outerRadius={80}
-                paddingAngle={5}
-                dataKey="value"
+                fill="#8884d8"
+                dataKey="amount"
+                nameKey="category"
+                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
               >
-                {categoryData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={COLORS[index % COLORS.length]} 
-                  />
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={formatTooltip} />
+              <Tooltip content={<CustomTooltip />} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
-        </div>
+        ) : (
+          <div className="h-full flex items-center justify-center">
+            <p className="text-muted-foreground">No {view} transactions to display</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

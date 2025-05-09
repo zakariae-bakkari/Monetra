@@ -19,14 +19,14 @@ import { Badge } from "@src/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@src/lib/utils";
 import appwriteService from "@src/lib/store";
-import { Wallet } from "@src/types/types";
+import { Transaction, Wallet } from "@src/types/types";
 
 export default function WalletDetail() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [txs, setTxs] = useState<any[]>([]);
+  const [txs, setTxs] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEditWallet, setShowEditWallet] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -64,7 +64,7 @@ export default function WalletDetail() {
 
   const loadTransactions = async () => {
     try {
-      const res = await databases.listDocuments(DB_ID, TRANSACTIONS_COLLECTION_ID, [
+      const res = await databases.listDocuments<Transaction>(DB_ID, TRANSACTIONS_COLLECTION_ID, [
         Query.equal("wallets", id),
         Query.orderDesc("date")
       ]);
@@ -201,11 +201,6 @@ export default function WalletDetail() {
             {wallet.balance < 0 && wallet.type !== "Credit Card" && (
               <Badge variant="destructive">Negative Balance Warning</Badge>
             )}
-            {wallet.type === "Credit Card" && wallet.creditLimit && (
-              <Badge variant="outline">
-                Limit: {wallet.creditLimit.toFixed(2)} MAD
-              </Badge>
-            )}
           </div>
           <div className="mt-4">
             <p className={cn(
@@ -218,12 +213,6 @@ export default function WalletDetail() {
             )}>
               {wallet.balance.toFixed(2)} MAD
             </p>
-            
-            {wallet.type === "Credit Card" && wallet.creditLimit && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Available: {(wallet.creditLimit - Math.abs(Math.min(0, wallet.balance))).toFixed(2)} MAD
-              </p>
-            )}
           </div>
         </div>
         
@@ -356,7 +345,6 @@ export default function WalletDetail() {
                 name: wallet.name,
                 type: wallet.type,
                 balance: wallet.balance,
-                creditLimit: wallet.creditLimit
               }}
               editId={id}
               userId={userId}

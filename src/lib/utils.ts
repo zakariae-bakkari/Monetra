@@ -54,7 +54,7 @@ export async function validateTransaction(
 
     // For expenses, check if there's enough balance
     // For updates, consider the net effect on balance
-    if (transaction.type === "EXPENSE" as any) {
+    if (transaction.type === "EXPENSE" as string) {
       if (isUpdate && originalTransaction) {
         // Calculate the net effect on balance for an update
         const originalAmount = originalTransaction.type === "EXPENSE" as TransactionType ? 

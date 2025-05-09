@@ -26,13 +26,14 @@ import {
 import { account } from "@src/lib/appwrite.config";
 import appwriteService from "@src/lib/store";
 import { TransactionNewDialog } from "@src/components/transactions/transaction-new-dialog";
+import { Transaction } from "@src/types/types";
 
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showTransactionDialog, setShowTransactionDialog] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const fetchTransactions = async () => {
     try {
@@ -78,7 +79,7 @@ export default function CalendarPage() {
 
   // Group transactions by date
   const transactionsByDate = useMemo(() => {
-    const grouped: Record<string, any[]> = {};
+    const grouped: Record<string, Transaction[]> = {};
 
     transactions.forEach((transaction) => {
       const dateKey = format(new Date(transaction.date), "yyyy-MM-dd");

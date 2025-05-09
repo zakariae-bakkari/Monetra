@@ -23,7 +23,7 @@ export default function ProtectedLayout({
       <div className="">
         <Navbar />
       </div>
-      <main className="col-span-5 max-h-screen overflow-y-scroll">{children}</main>
+      <main className="col-span-5 max-h-screen overflow-y-scroll bg-background">{children}</main>
     </div>
   );
 }

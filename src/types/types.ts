@@ -1,3 +1,5 @@
+import { Models } from "appwrite";
+
 export type Category = 
   | "Food" 
   | "Transportation" 
@@ -14,9 +16,7 @@ export type Category =
 
 export type TransactionType = "Income" | "Expense";
 
-
-
-export interface Wallet {
+export interface WalletData {
   $id: string;
   name: string;
   type: string;
@@ -26,21 +26,22 @@ export interface Wallet {
   $updatedAt?: Date;
   transactions?: string[]; // This is the Appwrite relation field name
 }
+export type Wallet = WalletData & Models.Document;
 
-export interface Transaction {
-  $id: string;
+export interface TransactionData {
   amount: number;
   type: TransactionType;
-  wallets: string; 
+  wallets: string;
   userId: string;
   date: Date;
   reason?: string;
   notes?: string;
   category: Category;
+  hasExpectedReturnDate?: boolean; // Changed from expectedReturnDate boolean to hasExpectedReturnDate
   expectedReturnDate?: Date | null;
-  $createdAt: Date;
-  $updatedAt: Date;
 }
+
+export type Transaction = TransactionData & Models.Document;
 
 export interface DailyTransactionSummary {
   date: Date;

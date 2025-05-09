@@ -1,191 +1,111 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+// import { useMemo } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  TooltipProps
 } from "recharts";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@src/components/ui/card";
-import { startOfMonth, endOfMonth, eachDayOfInterval, format } from "date-fns";
-import appwriteService from "@src/lib/store";
-import { account } from "@src/lib/appwrite.config";
+import { Transaction } from "@/types/types";
 
-interface DailyData {
-  date: string;
-  income: number;
-  expense: number;
-  balance: number;
+interface ActivityChartProps {
+  transactions: Transaction[];
 }
 
-export function ActivityChart() {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export function ActivityChart({ transactions }: ActivityChartProps) {
+  const today = new Date();
+  const start = startOfMonth(today);
+  const end = endOfMonth(today);
   
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const user = await account.get();
-        const data = await appwriteService.fetchTransactions(user.$id);
-        setTransactions(data);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-      } finally {
-        setLoading(false);
-      }
+  const dailyData = eachDayOfInterval({ start, end }).map(day => {
+    const dayTransactions = transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return (
+        transactionDate.getDate() === day.getDate() &&
+        transactionDate.getMonth() === day.getMonth() &&
+        transactionDate.getFullYear() === day.getFullYear()
+      );
+    });
+    
+    const income = dayTransactions
+      .filter(t => t.type === "Income")
+      .reduce((sum, t) => sum + t.amount, 0);
+      
+    const expense = dayTransactions
+      .filter(t => t.type === "Expense")
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    return {
+      date: format(day, "dd/MM"),
+      income,
+      expense,
+      balance: income - expense
     };
-    
-    fetchTransactions();
-  }, []);
-  
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  
-  const chartData = useMemo(() => {
-    // Create an array of all days in the month
-    const daysInMonth = eachDayOfInterval({
-      start: monthStart,
-      end: monthEnd
-    });
-    
-    // Initialize data for each day
-    const dailyData: Record<string, DailyData> = {};
-    daysInMonth.forEach(day => {
-      const dateKey = format(day, "yyyy-MM-dd");
-      dailyData[dateKey] = {
-        date: format(day, "MMM dd"),
-        income: 0,
-        expense: 0,
-        balance: 0
-      };
-    });
-    
-    // Populate with transaction data
-    transactions.forEach(transaction => {
-      const transactionDate = new Date(transaction.date);
-      if (transactionDate >= monthStart && transactionDate <= monthEnd) {
-        const dateKey = format(transactionDate, "yyyy-MM-dd");
-        
-        if (transaction.type === "Income") {
-          dailyData[dateKey].income += transaction.amount;
-        } else {
-          dailyData[dateKey].expense += transaction.amount;
-        }
-      }
-    });
-    
-    // Calculate running balance
-    let runningBalance = 0;
-    return Object.keys(dailyData)
-      .sort()
-      .map(dateKey => {
-        const day = dailyData[dateKey];
-        runningBalance += day.income - day.expense;
-        return {
-          ...day,
-          balance: runningBalance
-        };
-      });
-  }, [transactions, monthStart, monthEnd]);
-  
-  // Format for tooltip
-  const formatTooltip = (value: number) => {
-    return `$${value.toFixed(2)}`;
-  };
-  
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Activity</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  if (chartData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Activity</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center">
-          <p className="text-muted-foreground text-center">
-            No data available for this month
+  });
+
+  const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-background p-3 border rounded-md shadow-md">
+          <p className="font-medium">{`Date: ${label}`}</p>
+          <p style={{ color: '#10b981' }}>{`Income: ${payload[0].value?.toFixed(2)} MAD`}</p>
+          <p style={{ color: '#ef4444' }}>{`Expense: ${payload[1].value?.toFixed(2)} MAD`}</p>
+          <p style={{ color: payload[2].value && payload[2].value >= 0 ? '#10b981' : '#ef4444' }}>
+            {`Balance: ${payload[2].value?.toFixed(2)} MAD`}
           </p>
-        </CardContent>
-      </Card>
-    );
-  }
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Monthly Activity</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={chartData}
-              margin={{
-                top: 5,
-                right: 30,
-                left: 20,
-                bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-              <XAxis 
-                dataKey="date" 
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value, index) => {
-                  // Show every 3rd label on smaller screens
-                  return index % 3 === 0 ? value : '';
-                }}
-              />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                formatter={formatTooltip}
-                labelFormatter={(label) => `Date: ${label}`}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="income" 
-                stroke="hsl(var(--chart-1))" 
-                strokeWidth={2} 
-                dot={{ r: 2 }}
-                activeDot={{ r: 4 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="expense" 
-                stroke="hsl(var(--chart-2))" 
-                strokeWidth={2} 
-                dot={{ r: 2 }}
-                activeDot={{ r: 4 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="balance" 
-                stroke="hsl(var(--chart-3))" 
-                strokeWidth={2.5} 
-                dot={{ r: 2 }}
-                activeDot={{ r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      <CardContent className="h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={dailyData}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="income" 
+              stroke="#10b981" 
+              strokeWidth={2} 
+              dot={{ r: 3 }}
+              activeDot={{ r: 5 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="expense" 
+              stroke="#ef4444" 
+              strokeWidth={2} 
+              dot={{ r: 3 }}
+              activeDot={{ r: 5 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="balance" 
+              stroke="#3b82f6" 
+              strokeWidth={2.5}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );

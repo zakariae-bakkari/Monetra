@@ -3,8 +3,6 @@
 import { toast as sonnerToast, Toaster as SonnerToaster } from 'sonner';
 import React, { ReactNode } from 'react';
 
-type ToastType = 'default' | 'success' | 'error' | 'warning' | 'info';
-
 interface ToastOptions {
   id?: string;
   duration?: number;

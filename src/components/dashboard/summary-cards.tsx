@@ -1,153 +1,97 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
-  Calendar, 
-  Loader2 
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@src/components/ui/card";
+import { useMemo } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@src/components/ui/card";
+import { Wallet, Calendar, TrendingUp} from "lucide-react";
 import { cn } from "@src/lib/utils";
-import { startOfMonth, endOfMonth, format } from "date-fns";
-import appwriteService from "@src/lib/store";
-import { account } from "@src/lib/appwrite.config";
+import { Transaction, Wallet as WalletType } from "@/types/types";
 
-export function SummaryCards() {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface SummaryCardsProps {
+  transactions: Transaction[];
+  wallets?: WalletType[];
+}
+
+export function SummaryCards({ transactions, wallets = [] }: SummaryCardsProps) {
+  const currentDateTime = useMemo(() => new Date(), []);
   
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const user = await account.get();
-        const data = await appwriteService.fetchTransactions(user.$id);
-        setTransactions(data);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const stats = useMemo(() => {
+    const thisMonth = currentDateTime.getMonth();
+    const thisYear = currentDateTime.getFullYear();
     
-    fetchTransactions();
-  }, []);
-  
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  
-  const monthTransactions = useMemo(() => 
-    transactions.filter(transaction => {
-      const date = new Date(transaction.date);
-      return date >= monthStart && date <= monthEnd;
-    }), 
-    [transactions, monthStart, monthEnd]
-  );
-  
-  const totalIncome = useMemo(() => 
-    monthTransactions
-      .filter(t => t.type === "Income")
-      .reduce((sum, t) => sum + t.amount, 0),
-    [monthTransactions]
-  );
-  
-  const totalExpense = useMemo(() => 
-    monthTransactions
-      .filter(t => t.type === "Expense")
-      .reduce((sum, t) => sum + t.amount, 0),
-    [monthTransactions]
-  );
-  
-  const totalBalance = totalIncome - totalExpense;
-  
-  const pendingReturns = useMemo(() => 
-    transactions
-      .filter(t => t.expectedReturnDate && new Date(t.expectedReturnDate) >= now)
+    const monthly = transactions
+      .filter(t => {
+        const date = new Date(t.date);
+        return date.getMonth() === thisMonth && date.getFullYear() === thisYear;
+      })
+      .reduce(
+        (acc, t) => {
+          if (t.type === "Income") {
+            acc.income += t.amount;
+          } else {
+            acc.expense += t.amount;
+          }
+          return acc;
+        },
+        { income: 0, expense: 0 }
+      );
+    
+    const netWorth = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
+    
+    const pendingReturns = transactions
+      .filter(t => t.expectedReturnDate && new Date(t.expectedReturnDate) > currentDateTime)
       .reduce((sum, t) => {
-        if (t.type === "Expense") {
-          // Money lent out (we expect to get back)
-          return sum + t.amount;
-        } else {
-          // Money to be repaid (we need to give back)
-          return sum - t.amount;
-        }
-      }, 0),
-    [transactions, now]
-  );
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6 flex items-center justify-center h-[100px]">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+        // If it's an expense that will be returned, it's incoming (positive)
+        // If it's an income that will be returned, it's outgoing (negative)
+        return sum + (t.type === "Expense" ? t.amount : -t.amount);
+      }, 0);
+    
+    return {
+      monthly,
+      netWorth,
+      pendingReturns
+    };
+  }, [transactions, wallets, currentDateTime]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-          <ArrowUpRight className="h-4 w-4 text-green-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">${totalIncome.toFixed(2)}</div>
-          <p className="text-xs text-muted-foreground">
-            {format(monthStart, "MMMM yyyy")}
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-          <ArrowDownRight className="h-4 w-4 text-red-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-red-600 dark:text-red-400">${totalExpense.toFixed(2)}</div>
-          <p className="text-xs text-muted-foreground">
-            {format(monthStart, "MMMM yyyy")}
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Balance</CardTitle>
-          <DollarSign className={cn(
-            "h-4 w-4",
-            totalBalance >= 0 
-              ? "text-green-500" 
-              : "text-red-500"
-          )} />
+          <CardTitle className="text-sm font-medium">Net Worth</CardTitle>
+          <Wallet className="h-4 w-4 text-blue-500" />
         </CardHeader>
         <CardContent>
           <div className={cn(
             "text-2xl font-bold",
-            totalBalance >= 0 
+            stats.netWorth >= 0 
+              ? "text-blue-600 dark:text-blue-400" 
+              : "text-red-600 dark:text-red-400"
+          )}>
+            {stats.netWorth.toFixed(2)} MAD
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Total balance across all wallets
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">Monthly Balance</CardTitle>
+          <TrendingUp className="h-4 w-4 text-green-500" />
+        </CardHeader>
+        <CardContent>
+          <div className={cn(
+            "text-2xl font-bold",
+            stats.monthly.income - stats.monthly.expense >= 0 
               ? "text-green-600 dark:text-green-400" 
               : "text-red-600 dark:text-red-400"
           )}>
-            ${Math.abs(totalBalance).toFixed(2)}
+            {(stats.monthly.income - stats.monthly.expense).toFixed(2)} MAD
           </div>
-          <p className="text-xs text-muted-foreground flex items-center">
-            {totalBalance >= 0 ? (
-              <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-            ) : (
-              <TrendingDown className="h-3 w-3 mr-1 text-red-500" />
-            )}
-            {totalBalance >= 0 ? "Positive" : "Negative"} balance
-          </p>
+          <div className="text-xs text-muted-foreground flex justify-between items-center mt-1">
+            <div>In: <span className="text-green-600">{stats.monthly.income.toFixed(2)}</span></div>
+            <div>Out: <span className="text-red-600">{stats.monthly.expense.toFixed(2)}</span></div>
+          </div>
         </CardContent>
       </Card>
       
@@ -159,14 +103,14 @@ export function SummaryCards() {
         <CardContent>
           <div className={cn(
             "text-2xl font-bold",
-            pendingReturns >= 0 
+            stats.pendingReturns >= 0 
               ? "text-blue-600 dark:text-blue-400" 
               : "text-orange-600 dark:text-orange-400"
           )}>
-            ${Math.abs(pendingReturns).toFixed(2)}
+            {Math.abs(stats.pendingReturns).toFixed(2)} MAD
           </div>
           <p className="text-xs text-muted-foreground">
-            {pendingReturns >= 0 
+            {stats.pendingReturns >= 0 
               ? "Expected to receive" 
               : "Expected to repay"}
           </p>

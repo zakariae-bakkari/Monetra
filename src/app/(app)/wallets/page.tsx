@@ -13,9 +13,10 @@ import { WalletForm } from "@src/components/wallets/wallet-form";
 import { account } from "@src/lib/appwrite.config";
 import { Card } from "@src/components/ui/card";
 import appwriteService from "@src/lib/store";
+import { Wallet } from "@src/types/types";
 
 export default function WalletsPage() {
-  const [wallets, setWallets] = useState<any[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showAddWallet, setShowAddWallet] = useState<boolean>(false);
   const [userId, setUserId] = useState<string | null>(null);

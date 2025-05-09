@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { cn } from "@src/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@src/components/ui/dialog";
+import { TransactionForm, FormValues } from "@src/components/transactions/transaction-form";
 import appwriteService from "@src/lib/store";
-import { TransactionForm } from "./transaction-form";
-import { transactionFormSchema } from "./transaction-form";
 import { useToast } from "@/hooks/use-toast";
 import { account } from "@src/lib/appwrite.config";
+import { Wallet } from "@/types/types";
 
 export interface TransactionNewDialogProps {
   open: boolean;
@@ -18,82 +16,36 @@ export interface TransactionNewDialogProps {
   selectedDate?: Date | null;
 }
 
-// Radix Dialog primitives all in one file
-const Dialog = DialogPrimitive.Root;
-// const DialogTrigger = DialogPrimitive.Trigger;
-
-const DialogPortal: React.FC<React.ComponentProps<typeof DialogPrimitive.Portal>> = ({ children, ...props }) => (
-  <DialogPrimitive.Portal {...props}>
-    <div className="fixed inset-0 z-50 flex items-start justify-center sm:items-center">
-      <DialogPrimitive.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in" />
-      {children}
-    </div>
-  </DialogPrimitive.Portal>
-);
-
-export const DialogContent = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentProps<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "relative z-50 w-full sm:max-w-[600px] max-h-[90vh] overflow-y-auto",
-        "rounded-lg bg-popover p-6 shadow-lg animate-in fade-in-90 slide-in-from-top-10",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute top-4 right-4 opacity-70 hover:opacity-100 focus:outline-none">
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
-
-export const DialogHeader: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, ...props }) => (
-  <div className={cn("flex flex-col space-y-1.5 pb-4", className)} {...props} />
-);
-
-export const DialogTitle = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Title>,
-  React.ComponentProps<typeof DialogPrimitive.Title>
->(
-  ({ className, ...props }, ref) => (
-    <DialogPrimitive.Title ref={ref} className={cn("text-lg font-semibold", className)} {...props} />
-  )
-);
-DialogTitle.displayName = "DialogTitle";
-
-export function TransactionNewDialog({ open, onClose, onTransactionAdded,selectedDate }: TransactionNewDialogProps) {
+export function TransactionNewDialog({ open, onClose, onTransactionAdded, selectedDate }: TransactionNewDialogProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [wallets, setWallets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
 
-  const form = useForm({
-    resolver: zodResolver(transactionFormSchema),
+  // Set up form with validation
+  const form = useForm<FormValues>({
     defaultValues: {
-      date: selectedDate ? selectedDate : new Date(),
+      date: selectedDate || new Date(),
       amount: 0,
       type: "Expense",
-      category: "Food",
-      reason: "",
-      notes: "",
+      category: "Other",
       wallets: "",
-      expectedReturnDate: undefined,
+      reason: "",
+      hasExpectedReturnDate: false,
+      expectedReturnDate: null,
+      notes: "",
     },
   });
 
+  // Update date when selectedDate prop changes
   useEffect(() => {
     if (selectedDate) {
       form.setValue("date", selectedDate);
     }
-  }, [selectedDate, form]) //this will set the date to the selected date when the dialog opens
+  }, [selectedDate, form]);
 
+  // Load user and wallets when dialog opens
   useEffect(() => {
     const fetchUserAndWallets = async () => {
       try {
@@ -133,7 +85,7 @@ export function TransactionNewDialog({ open, onClose, onTransactionAdded,selecte
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormValues) => {
     if (!userId) {
       toast({ title: "Error", description: "User not logged in", variant: "destructive" });
       return;
@@ -156,20 +108,34 @@ export function TransactionNewDialog({ open, onClose, onTransactionAdded,selecte
           }
         } catch (err) {
           console.error("Error updating wallet balance:", err);
+          toast({
+            title: "Warning",
+            description: "Transaction created but wallet balance update failed",
+            variant: "destructive",
+          });
         }
       }
       
-      toast({ title: "Success", description: "Transaction added successfully" });
+      toast({
+        title: "Success",
+        description: "Transaction created successfully",
+      });
+      
+      // Reset form and close dialog
       form.reset();
       onClose();
       
-      // Notify parent component that transaction was added
+      // Notify parent about the new transaction
       if (onTransactionAdded) {
         onTransactionAdded();
       }
     } catch (error) {
-      toast({ title: "Error", description: "Could not add transaction", variant: "destructive" });
-      console.error(error);
+      console.error("Error creating transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create transaction",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -177,23 +143,17 @@ export function TransactionNewDialog({ open, onClose, onTransactionAdded,selecte
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>New Transaction</DialogTitle>
+          <DialogTitle>Add New Transaction</DialogTitle>
         </DialogHeader>
-        {loading || isSubmitting ? (
-          <div className="flex justify-center items-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <TransactionForm 
-            form={form} 
-            onSubmit={onSubmit} 
-            wallets={wallets} 
-            isLoading={isSubmitting} 
-            onCancel={onClose}
-          />
-        )}
+        <TransactionForm 
+          form={form}
+          onSubmit={onSubmit}
+          wallets={wallets}
+          isLoading={isSubmitting || loading}
+          onCancel={onClose}
+        />
       </DialogContent>
     </Dialog>
   );
