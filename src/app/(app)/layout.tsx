@@ -19,11 +19,11 @@ export default function ProtectedLayout({
  }, [authStatus, router]);
 
   return (
-    <div className="grid grid-cols-6  min-h-screen">
-      <div className="">
-        <Navbar />
+    <div className="flex min-h-screen">
+      <div>
+      <Navbar />
       </div>
-      <main className="col-span-5 max-h-screen overflow-y-scroll bg-background">{children}</main>
+      <main className="flex-1 max-h-screen overflow-y-scroll bg-background">{children}</main>
     </div>
   );
 }

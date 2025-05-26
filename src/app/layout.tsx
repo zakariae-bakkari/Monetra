@@ -1,4 +1,5 @@
 "use client";
+
 import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import { useEffect, useState } from "react";
@@ -10,7 +11,6 @@ import { Analytics } from "@vercel/analytics/next"
 import { TutorialProvider } from "@src/context/tutorialContext";
 import { Toaster } from "@src/components/ui/sonner";
 import { TutorialManager } from "@src/components/tutorial/TutorialManager";
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
