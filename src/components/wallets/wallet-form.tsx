@@ -157,7 +157,7 @@ export function WalletForm({
                 </FormControl>
                 <SelectContent>
                   {walletTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
+                    <SelectItem className="hover:bg-accent/20" key={type} value={type}>
                       {type}
                     </SelectItem>
                   ))}
@@ -195,6 +195,7 @@ export function WalletForm({
             <Button 
               type="button" 
               variant="outline" 
+              className="bg-transparent hover:bg-card/20 text-muted-foreground hover:text-accent"
               onClick={onCancel}
               disabled={isLoading}
             >

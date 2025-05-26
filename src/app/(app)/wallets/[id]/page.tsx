@@ -1,16 +1,34 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Query } from "appwrite";
-import { ArrowLeft, Edit, Trash2, PlusCircle, Loader2, ArrowUpDown } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Edit, 
+  Trash2, 
+  PlusCircle, 
+  Loader2, 
+  ArrowUpDown,
+  BadgeDollarSign,
+  CreditCard,
+  Wallet2
+} from "lucide-react";
 import { Button } from "@src/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@src/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter 
+} from "@src/components/ui/dialog";
 import { 
   Card, 
   CardContent,
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardDescription 
 } from "@src/components/ui/card";
 import { WalletForm } from "@src/components/wallets/wallet-form";
 import { account, databases, DB_ID, TRANSACTIONS_COLLECTION_ID } from "@src/lib/appwrite.config";
@@ -35,34 +53,7 @@ export default function WalletDetail() {
   const [txStats, setTxStats] = useState({ income: 0, expense: 0 });
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const user = await account.get();
-        setUserId(user.$id);
-        
-        // Fetch wallet
-        const w = await appwriteService.fetchWallet(id);
-        if (w.userId !== user.$id) return router.push("/wallets"); // security check
-        setWallet(w);
-        
-        // Fetch transactions
-        await loadTransactions();
-      } catch (error) {
-        console.error("Error loading wallet data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load wallet data",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, [id, router, toast]);
-
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
     try {
       const res = await databases.listDocuments<Transaction>(DB_ID, TRANSACTIONS_COLLECTION_ID, [
         Query.equal("wallets", id),
@@ -91,6 +82,61 @@ export default function WalletDetail() {
       setTxStats({ income: totalIncome, expense: totalExpense });
     } catch (error) {
       console.error("Error loading transactions:", error);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const user = await account.get();
+        setUserId(user.$id);
+        
+        // Fetch wallet
+        const w = await appwriteService.fetchWallet(id);
+        if (w.userId !== user.$id) return router.push("/wallets"); // security check
+        setWallet(w);
+        
+        // Fetch transactions
+        await loadTransactions();
+      } catch (error) {
+        console.error("Error loading wallet data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load wallet data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [id, router, toast, loadTransactions]);
+
+  const getWalletIcon = (type: string) => {
+    switch (type) {
+      case "Cash":
+        return <BadgeDollarSign className="h-5 w-5" />;
+      case "Credit Card":
+        return <CreditCard className="h-5 w-5" />;
+      case "Bank Account":
+        return <Wallet2 className="h-5 w-5" />;
+      default:
+        return <Wallet2 className="h-5 w-5" />;
+    }
+  };
+
+  const getWalletColor = (type: string, balance: number) => {
+    if (balance < 0 && type !== "Credit Card") return "text-red-500 dark:text-red-400";
+
+    switch (type) {
+      case "Cash":
+        return "text-green-600 dark:text-green-500";
+      case "Credit Card":
+        return "text-purple-600 dark:text-purple-400";
+      case "Bank Account":
+        return "text-blue-600 dark:text-blue-400";
+      default:
+        return "text-primary";
     }
   };
 
@@ -149,114 +195,139 @@ export default function WalletDetail() {
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
       <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-      <p className="text-foreground">Chargement du portefeuille...</p>
+      <p className="text-muted-foreground">Loading wallet...</p>
     </div>
   );
   
   if (!wallet) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-      <p className="text-destructive font-semibold mb-4">Ce portefeuille est introuvable.</p>
+      <p className="text-destructive font-semibold mb-4">This wallet could not be found.</p>
       <Link href="/wallets">
-        <Button>Retour aux portefeuilles</Button>
+        <Button>Return to wallets</Button>
       </Link>
     </div>
   );
 
   return (
-    <section className="min-h-screen flex flex-col items-center bg-background py-8 px-4">
-      <Card className={cn(
-        "p-8 w-full max-w-2xl border shadow-sm",
-        wallet.balance < 0 && wallet.type !== "Credit Card" && "border-red-500 dark:border-red-400"
-      )}>
-        <div className="flex justify-between items-center mb-6">
-          <Button variant="link" className="p-0" asChild>
+    <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
+      <div className="mb-6 flex justify-between items-center">
+        <div className="flex items-center">
+          <Button variant="ghost" size="sm" className="group mr-2" asChild>
             <Link href="/wallets" className="flex items-center">
-              <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+              <ArrowLeft className="h-4 w-4 mr-1 group-hover:-translate-x-0.5 transition-transform" /> 
+              Back
             </Link>
           </Button>
-          
-          <div className="space-x-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => setShowEditWallet(true)}
-            >
-              <Edit className="h-4 w-4 mr-1" /> Modifier
-            </Button>
-            
-            <Button 
-              size="sm" 
-              variant="destructive" 
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-1" /> Supprimer
-            </Button>
-          </div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            {wallet.name}
+          </h1>
         </div>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => setShowEditWallet(true)}
+            className="hover:bg-primary/5"
+          >
+            <Edit className="h-4 w-4 mr-1" /> Edit
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant="destructive"
+            className="hover:bg-destructive/90"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-1" /> Delete
+          </Button>
+        </div>
+      </div>
 
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold">{wallet.name}</h1>
-          <div className="flex items-center gap-3 mt-1">
-            <Badge variant="secondary">{wallet.type}</Badge>
-            {wallet.balance < 0 && wallet.type !== "Credit Card" && (
-              <Badge variant="destructive">Negative Balance Warning</Badge>
-            )}
-          </div>
-          <div className="mt-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Card className={cn(
+          "col-span-3 md:col-span-1 bg-gradient-to-br border",
+          wallet.balance < 0 && wallet.type !== "Credit Card" 
+            ? "from-red-500/10 to-transparent border-red-500/20" 
+            : "from-primary/10 to-transparent border-primary/20"
+        )}>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "p-2 rounded-md",
+                wallet.balance < 0 && wallet.type !== "Credit Card"
+                  ? "bg-red-100 dark:bg-red-900/20"
+                  : "bg-primary/10"
+              )}>
+                <span className={getWalletColor(wallet.type, wallet.balance)}>
+                  {getWalletIcon(wallet.type)}
+                </span>
+              </div>
+              <div>
+                <CardDescription>
+                  <Badge variant="secondary" className="font-normal">
+                    {wallet.type}
+                  </Badge>
+                  {wallet.balance < 0 && wallet.type !== "Credit Card" && (
+                    <Badge variant="destructive" className="ml-2 font-normal">
+                      Negative Balance
+                    </Badge>
+                  )}
+                </CardDescription>
+                <CardTitle className="text-xl">Balance</CardTitle>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
             <p className={cn(
-              "text-2xl font-semibold",
+              "text-3xl font-bold",
               wallet.balance < 0 && wallet.type !== "Credit Card" 
                 ? "text-red-500 dark:text-red-400" 
                 : wallet.balance < 0 
                   ? "text-yellow-500 dark:text-yellow-400"
-                  : ""
+                  : "text-foreground"
             )}>
               {wallet.balance.toFixed(2)} MAD
             </p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
         
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <Card className={cn(
-            "bg-emerald-50 dark:bg-emerald-950",
-            txStats.income > 0 && "border-emerald-500"
-          )}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Revenus</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">
-                + {txStats.income.toFixed(2)} MAD
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className={cn(
-            "bg-rose-50 dark:bg-rose-950",
-            txStats.expense > 0 && "border-rose-500"
-          )}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-rose-700 dark:text-rose-400">Dépenses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-semibold text-rose-700 dark:text-rose-400">
-                - {txStats.expense.toFixed(2)} MAD
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Income</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+              + {txStats.income.toFixed(2)} MAD
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-rose-700 dark:text-rose-400">Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-bold text-rose-700 dark:text-rose-400">
+              - {txStats.expense.toFixed(2)} MAD
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-bold text-lg">Transactions</h2>
+      <Card className="border shadow-sm">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl">Transactions</CardTitle>
             <div className="flex items-center gap-2">
               <Button 
                 size="sm" 
-                variant="ghost" 
+                variant="ghost"
                 onClick={handleSort}
+                className="text-xs"
               >
                 <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
-                {sortOrder === 'desc' ? 'Plus récent' : 'Plus ancien'}
+                {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
               </Button>
               
               <Link
@@ -265,31 +336,36 @@ export default function WalletDetail() {
                   query: { walletId: wallet.$id }
                 }}
               >
-                <Button size="sm" variant="outline">
-                  <PlusCircle className="h-3.5 w-3.5 mr-1" /> Nouvelle
+                <Button size="sm" variant="outline" className="text-xs">
+                  <PlusCircle className="h-3.5 w-3.5 mr-1" /> New Transaction
                 </Button>
               </Link>
             </div>
           </div>
-
+        </CardHeader>
+        
+        <CardContent>
           {txs.length === 0 ? (
             <div className="text-center p-8 border border-dashed rounded-xl">
-              <p className="text-muted-foreground mb-4">Aucune transaction pour ce portefeuille.</p>
+              <p className="text-muted-foreground mb-4">No transactions for this wallet yet.</p>
               <Link href="/transactions">
                 <Button variant="outline">
-                  <PlusCircle className="h-4 w-4 mr-1" /> Ajouter une transaction
+                  <PlusCircle className="h-4 w-4 mr-1" /> Add a transaction
                 </Button>
               </Link>
             </div>
           ) : (
             <div className="space-y-3">
               {txs.slice(0, 10).map((tx) => (
-                <div key={tx.$id} className="bg-muted p-4 rounded-xl">
+                <div 
+                  key={tx.$id} 
+                  className="bg-muted p-4 rounded-xl hover:bg-muted/70 transition-colors"
+                >
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{tx.reason || tx.category}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline">{tx.category}</Badge>
+                        <Badge variant="outline" className="font-normal text-xs">{tx.category}</Badge>
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(tx.date), "dd MMM yyyy")}
                         </span>
@@ -314,6 +390,7 @@ export default function WalletDetail() {
                   <Button
                     variant="link"
                     asChild
+                    className="font-normal"
                   >
                     <Link
                       href={{
@@ -321,14 +398,14 @@ export default function WalletDetail() {
                         query: { walletId: wallet.$id }
                       }}
                     >
-                      Voir toutes les transactions ({txs.length})
+                      View all transactions ({txs.length})
                     </Link>
                   </Button>
                 </div>
               )}
             </div>
           )}
-        </div>
+        </CardContent>
       </Card>
 
       {/* Edit Wallet Dialog */}
@@ -336,7 +413,10 @@ export default function WalletDetail() {
         <Dialog open={showEditWallet} onOpenChange={setShowEditWallet}>
           <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
-              <DialogTitle>Modifier le portefeuille</DialogTitle>
+              <DialogTitle>Edit Wallet</DialogTitle>
+              <DialogDescription>
+                Make changes to your wallet information below
+              </DialogDescription>
             </DialogHeader>
             <WalletForm 
               onSuccess={handleEditSuccess}
@@ -357,9 +437,9 @@ export default function WalletDetail() {
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce portefeuille ? Cette action est irréversible et toutes les données associées seront perdues.
+              Are you sure you want to delete this wallet? This action cannot be undone and all associated data will be lost.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex space-x-2 justify-end">
@@ -367,7 +447,7 @@ export default function WalletDetail() {
               variant="outline" 
               onClick={() => setShowDeleteConfirm(false)}
             >
-              Annuler
+              Cancel
             </Button>
             <Button 
               variant="destructive" 
@@ -377,18 +457,18 @@ export default function WalletDetail() {
               {isDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" /> 
-                  Suppression...
+                  Deleting...
                 </>
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-1" /> 
-                  Confirmer la suppression
+                  Delete Wallet
                 </>
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </div>
   );
 }

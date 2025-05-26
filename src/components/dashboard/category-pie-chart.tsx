@@ -31,10 +31,30 @@ const COLORS = [
 
 export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
   const [view, setView] = useState<'expense' | 'income'>('expense');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [timeFrame, setTimeFrame] = useState<"month" | "year" | "all">("month");
   
+  const filteredTransactions = useMemo(() => {
+    const now = new Date();
+    
+    return transactions.filter(transaction => {
+      if (transaction.type !== (view === 'expense' ? 'Expense' : 'Income')) return false;
+      
+      const txDate = new Date(transaction.date);
+      
+      if (timeFrame === "month") {
+        return txDate.getMonth() === now.getMonth() && 
+               txDate.getFullYear() === now.getFullYear();
+      } else if (timeFrame === "year") {
+        return txDate.getFullYear() === now.getFullYear();
+      }
+      
+      return true; // "all" timeframe
+    });
+  }, [transactions, view, timeFrame]);
+
   const chartData = useMemo(() => {
-    const categoryData = transactions
-      .filter(t => t.type === (view === 'expense' ? 'Expense' : 'Income'))
+    const categoryData = filteredTransactions
       .reduce((acc, transaction) => {
         const category = transaction.category;
         
@@ -58,7 +78,7 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
 
     // Sort by amount descending
     return data.sort((a, b) => b.amount - a.amount);
-  }, [transactions, view]);
+  }, [filteredTransactions]);
 
   // Define the tooltip type more precisely
   interface CustomTooltipProps {
@@ -83,9 +103,10 @@ export function CategoryPieChart({ transactions }: CategoryPieChartProps) {
     return null;
   };
 
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="col-span-2 category-pie-chart">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle>Category Breakdown</CardTitle>
         <div className="flex space-x-2">
           <button

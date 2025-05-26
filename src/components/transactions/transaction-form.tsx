@@ -2,7 +2,7 @@
 
 import * as z from "zod";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, CreditCard, Receipt, Wallet } from "lucide-react";
 import { cn } from "@src/lib/utils";
 import { Button } from "@src/components/ui/button";
 
@@ -31,9 +31,11 @@ import {
 import { Checkbox } from "@src/components/ui/checkbox";
 import { Textarea } from "@src/components/ui/textarea";
 import appwriteService from "@src/lib/store";
-import { Wallet } from "@src/types/types";
+import { Wallet as WalletType } from "@src/types/types";
 import { UseFormReturn } from "react-hook-form";
 import { Calendar } from "../ui/calendar";
+import { motion } from "framer-motion";
+
 export const transactionFormSchema = z
   .object({
     date: z.date({
@@ -88,7 +90,7 @@ export type FormValues = z.infer<typeof transactionFormSchema>;
 interface TransactionFormProps {
   form: UseFormReturn<FormValues>;
   onSubmit: (data: FormValues) => Promise<void>;
-  wallets: Wallet[];
+  wallets: WalletType[];
   isLoading?: boolean;
   onCancel?: () => void;
 }
@@ -116,11 +118,73 @@ export function TransactionForm({
   ];
 
   const watchHasExpectedReturnDate = form.watch("hasExpectedReturnDate");
+  const watchTransactionType = form.watch("type");
+  
+  // Animation variants
+  const formVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      }
+    }
+  };
+  
+  const fieldVariants = {
+    hidden: { y: 10, opacity: 0 },
+    visible: {
+      y: 0, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 200,
+        damping: 20
+      }
+    }
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex gap-2">
+      <motion.form 
+        onSubmit={form.handleSubmit(onSubmit)} 
+        className="space-y-6"
+        variants={formVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={fieldVariants} className="flex items-center justify-center mb-4">
+          <div className={`
+            flex items-center gap-4 p-2 px-4 rounded-full bg-secondary/5 border border-border
+          `}>
+            <Button
+              type="button"
+              variant={watchTransactionType === 'Expense' ? "default" : "ghost"}
+              className={`
+                rounded-full px-4 gap-2 text-sm
+                ${watchTransactionType === 'Expense' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}
+              `}
+              onClick={() => form.setValue("type", "Expense")}
+            >
+              <Receipt className="h-4 w-4" />
+              Expense
+            </Button>
+            <Button
+              type="button"
+              variant={watchTransactionType === 'Income' ? "default" : "ghost"}
+              className={`
+                rounded-full px-4 gap-2 text-sm
+                ${watchTransactionType === 'Income' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}
+              `}
+              onClick={() => form.setValue("type", "Income")}
+            >
+              <Wallet className="h-4 w-4" />
+              Income
+            </Button>
+          </div>
+        </motion.div>
+
+        <motion.div variants={fieldVariants} className="flex gap-2">
           <FormField
             control={form.control}
             name="date"
@@ -133,7 +197,7 @@ export function TransactionForm({
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full pl-3 text-left font-normal",
+                          "w-full pl-3 text-left font-normal border-border/60 hover:bg-secondary/5",
                           !field.value && "text-muted-foreground"
                         )}
                       >
@@ -173,6 +237,7 @@ export function TransactionForm({
                     type="number"
                     step="0.01"
                     placeholder="0.00"
+                    className="border-border/60 focus-visible:ring-primary/30"
                     {...field}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value);
@@ -189,32 +254,9 @@ export function TransactionForm({
               </FormItem>
             )}
           />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select transaction type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Expense">Expense</SelectItem>
-                    <SelectItem value="Income">Income</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        </motion.div>
+        
+        <motion.div variants={fieldVariants} className="grid grid-cols-1 gap-4">
           <FormField
             control={form.control}
             name="category"
@@ -226,7 +268,7 @@ export function TransactionForm({
                   defaultValue={field.value}
                 >
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="border-border/60 focus-visible:ring-primary/30">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                   </FormControl>
@@ -242,153 +284,180 @@ export function TransactionForm({
               </FormItem>
             )}
           />
-        </div>
+        </motion.div>
 
-        <FormField
-          control={form.control}
-          name="wallets"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Wallet</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a wallet" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {wallets.map((wallet) => (
-                    <SelectItem key={wallet.$id} value={wallet.$id}>
-                      {wallet.name} ({wallet.balance.toFixed(2)} MAD)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="reason"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Reason</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Why did you spend/receive this money?"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="hasExpectedReturnDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>
-                  This transaction has an expected return date (loans, refunds, etc.)
-                </FormLabel>
-              </div>
-            </FormItem>
-          )}
-        />
-
-        {watchHasExpectedReturnDate && (
+        <motion.div variants={fieldVariants}>
           <FormField
             control={form.control}
-            name="expectedReturnDate"
+            name="wallets"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Expected Return Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value || undefined}
-                      onSelect={field.onChange}
-                      disabled={(date) => date < new Date("1900-01-01")}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormDescription>
-                  When do you expect this money to be returned?
-                </FormDescription>
+              <FormItem>
+                <FormLabel className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  Wallet
+                </FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="border-border/60 focus-visible:ring-primary/30">
+                      <SelectValue placeholder="Select a wallet" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {wallets.map((wallet) => (
+                      <SelectItem key={wallet.$id} value={wallet.$id} className="flex items-center">
+                        {wallet.name} ({wallet.balance.toFixed(2)} MAD)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </motion.div>
+
+        <motion.div variants={fieldVariants}>
+          <FormField
+            control={form.control}
+            name="reason"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Reason</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Why did you spend/receive this money?"
+                    className="border-border/60 focus-visible:ring-primary/30"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </motion.div>
+
+        <motion.div variants={fieldVariants}>
+          <FormField
+            control={form.control}
+            name="hasExpectedReturnDate"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border/60 p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    This transaction has an expected return date
+                  </FormLabel>
+                  <FormDescription>
+                    Use for loans, refunds, or any money you expect to get back
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+        </motion.div>
+
+        {watchHasExpectedReturnDate && (
+          <motion.div
+            variants={fieldVariants}
+            initial="hidden" 
+            animate="visible"
+          >
+            <FormField
+              control={form.control}
+              name="expectedReturnDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Expected Return Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal border-border/60 hover:bg-secondary/5",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value || undefined}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date("1900-01-01")}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    When do you expect this money to be returned?
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </motion.div>
         )}
 
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes (Optional)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Additional notes about this transaction"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <motion.div variants={fieldVariants}>
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes (Optional)</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Additional notes about this transaction"
+                    className="border-border/60 focus-visible:ring-primary/30 resize-none min-h-[100px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </motion.div>
 
-        <div className="flex justify-end space-x-2">
+        <motion.div variants={fieldVariants} className="flex justify-end space-x-2">
           <Button
             type="button"
             variant="outline"
             onClick={onCancel}
             disabled={isLoading}
+            className="border-border/60"
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className={watchTransactionType === 'Income' ? 'bg-accent hover:bg-accent/90' : 'bg-primary hover:bg-primary/90'}
+          >
             {isLoading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 Processing...
               </>
             ) : (
-              "Save Transaction"
+              `Save ${watchTransactionType === 'Income' ? 'Income' : 'Expense'}`
             )}
           </Button>
-        </div>
-      </form>
+        </motion.div>
+      </motion.form>
     </Form>
   );
 }

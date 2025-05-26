@@ -7,7 +7,6 @@ import { Input } from "@src/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@src/components/ui/switch";
 import { Label } from "@src/components/ui/label";
-import { Separator } from "@src/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@src/components/ui/tabs";
 import { 
   User, 
@@ -167,77 +166,85 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-1">Account Settings</h1>
+    <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-1 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Account Settings</h1>
         <p className="text-muted-foreground">
-          Manage your account preferences and security
+          Manage your account preferences, security, and connected services
         </p>
       </div>
       
       <Tabs defaultValue="account" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="connections">Connections</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+        <TabsList className="mb-8 p-1 bg-muted/40 rounded-lg">
+          <TabsTrigger value="account" className="rounded-md">Account</TabsTrigger>
+          <TabsTrigger value="security" className="rounded-md">Security</TabsTrigger>
+          <TabsTrigger value="connections" className="rounded-md">Connections</TabsTrigger>
+          <TabsTrigger value="notifications" className="rounded-md">Notifications</TabsTrigger>
         </TabsList>
         
         <TabsContent value="account">
           <div className="grid gap-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="h-5 w-5 text-primary" />
-                  <CardTitle>Personal Information</CardTitle>
+            <Card className="border rounded-xl overflow-hidden shadow-sm">
+              <CardHeader className="bg-muted/30">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>Personal Information</CardTitle>
+                    <CardDescription>
+                      Update your personal details
+                    </CardDescription>
+                  </div>
                 </div>
-                <CardDescription>
-                  Update your personal details
-                </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <form className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue={user?.name} />
+                    <Label htmlFor="name" className="text-foreground">Full Name</Label>
+                    <Input id="name" defaultValue={user?.name} className="border-input/60" />
                   </div>
                   
                   <div className="flex justify-end">
-                    <Button type="submit">Save Changes</Button>
+                    <Button type="submit" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white">Save Changes</Button>
                   </div>
                 </form>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <Mail className="h-5 w-5 text-primary" />
-                  <CardTitle>Email Address</CardTitle>
+            <Card className="border rounded-xl overflow-hidden shadow-sm">
+              <CardHeader className="bg-muted/30">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Mail className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>Email Address</CardTitle>
+                    <CardDescription>
+                      Update your email address
+                    </CardDescription>
+                  </div>
                 </div>
-                <CardDescription>
-                  Update your email address
-                </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <form onSubmit={handleChangeEmail} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="current-email">Current Email</Label>
-                    <Input id="current-email" value={user?.email} disabled />
+                    <Label htmlFor="current-email" className="text-foreground">Current Email</Label>
+                    <Input id="current-email" value={user?.email} disabled className="bg-muted/50 text-muted-foreground" />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="email">New Email Address</Label>
-                    <Input id="email" name="email" type="email" required />
+                    <Label htmlFor="email" className="text-foreground">New Email Address</Label>
+                    <Input id="email" name="email" type="email" required className="border-input/60" />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="password">Confirm Password</Label>
-                    <Input id="password" name="password" type="password" required />
+                    <Label htmlFor="password" className="text-foreground">Confirm Password</Label>
+                    <Input id="password" name="password" type="password" required className="border-input/60" />
                   </div>
                   
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={updatingEmail}>
+                    <Button type="submit" disabled={updatingEmail} className="bg-primary hover:bg-primary/90">
                       {updatingEmail ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -252,118 +259,133 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
             
-            <Card className="border-destructive/50">
-              <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <LogOut className="h-5 w-5 text-destructive" />
-                <CardTitle className="text-destructive">Delete Account</CardTitle>
-              </div>
-              <CardDescription>
-                Permanently delete your account and all associated data
-              </CardDescription>
-              </CardHeader>
-              <CardFooter>
-              <div className="flex flex-col space-y-4">
-                <p className="text-sm text-muted-foreground">
-                This action is permanent and cannot be undone. All your data will be erased.
-                </p>
-                <div className="flex justify-end">
-                <Dialog>
-                  <DialogTrigger asChild>
-                  <Button variant="destructive">
-                    Delete Account
-                  </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Are you absolutely sure?</DialogTitle>
-                    <DialogDescription>
-                    This action cannot be undone. This will permanently delete your account
-                    and remove all your data from our servers.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
-                    
-                    if (!password) {
-                    toast({
-                      title: "Password Required",
-                      description: "You must enter your password to delete your account",
-                      variant: "destructive",
-                    });
-                    return;
-                    }
-                    
-                    try {
-                    // Implement actual account deletion logic here
-                    // await appwriteService.deleteAccount(password);
-                    toast({
-                      title: "Account Deletion Initiated",
-                      description: "Your account and associated data are being deleted",
-                    });
-                    } catch (error) {
-                    console.error("Error deleting account:", error);
-                    toast({
-                      title: "Deletion Failed",
-                      description: "There was an error deleting your account. Please check your password and try again.",
-                      variant: "destructive",
-                    });
-                    }
-                  }}>
-                    <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Confirm your password</Label>
-                      <Input id="password" name="password" type="password" placeholder="Enter your password" required />
-                    </div>
-                    </div>
-                    <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit" variant="destructive">Delete Account</Button>
-                    </DialogFooter>
-                  </form>
-                  </DialogContent>
-                </Dialog>
+            <Card className="border rounded-xl overflow-hidden shadow-sm border-destructive/20">
+              <CardHeader className="bg-destructive/5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-destructive/10 p-2 rounded-lg">
+                    <LogOut className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-destructive">Delete Account</CardTitle>
+                    <CardDescription>
+                      Permanently delete your account and all associated data
+                    </CardDescription>
+                  </div>
                 </div>
-              </div>
-              </CardFooter>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="flex flex-col space-y-4">
+                  <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+                    <p className="text-sm text-muted-foreground">
+                      This action is permanent and cannot be undone. All your data will be erased, including:
+                    </p>
+                    <ul className="mt-2 space-y-1 list-disc list-inside text-sm text-muted-foreground">
+                      <li>All your wallets and financial records</li>
+                      <li>Transaction history and reports</li>
+                      <li>Personal settings and preferences</li>
+                    </ul>
+                  </div>
+                  <div className="flex justify-end">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive">
+                          Delete Account
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Are you absolutely sure?</DialogTitle>
+                          <DialogDescription>
+                            This action cannot be undone. This will permanently delete your account
+                            and remove all your data from our servers.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
+                          
+                          if (!password) {
+                            toast({
+                              title: "Password Required",
+                              description: "You must enter your password to delete your account",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
+                          try {
+                            // Implement actual account deletion logic here
+                            // await appwriteService.deleteAccount(password);
+                            toast({
+                              title: "Account Deletion Initiated",
+                              description: "Your account and associated data are being deleted",
+                            });
+                          } catch (error) {
+                            console.error("Error deleting account:", error);
+                            toast({
+                              title: "Deletion Failed",
+                              description: "There was an error deleting your account. Please check your password and try again.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="password">Confirm your password</Label>
+                              <Input id="password" name="password" type="password" placeholder="Enter your password" required />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <DialogClose asChild>
+                              <Button type="button" variant="outline">Cancel</Button>
+                            </DialogClose>
+                            <Button type="submit" variant="destructive">Delete Account</Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </div>
         </TabsContent>
         
         <TabsContent value="security">
           <div className="grid gap-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <KeyRound className="h-5 w-5 text-primary" />
-                  <CardTitle>Change Password</CardTitle>
+            <Card className="border rounded-xl overflow-hidden shadow-sm">
+              <CardHeader className="bg-muted/30">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <KeyRound className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>Change Password</CardTitle>
+                    <CardDescription>
+                      Update your account password
+                    </CardDescription>
+                  </div>
                 </div>
-                <CardDescription>
-                  Update your account password
-                </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <form onSubmit={handleChangePassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="oldPassword">Current Password</Label>
-                    <Input id="oldPassword" name="oldPassword" type="password" required />
+                    <Label htmlFor="oldPassword" className="text-foreground">Current Password</Label>
+                    <Input id="oldPassword" name="oldPassword" type="password" required className="border-input/60" />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <Input id="newPassword" name="newPassword" type="password" required />
+                    <Label htmlFor="newPassword" className="text-foreground">New Password</Label>
+                    <Input id="newPassword" name="newPassword" type="password" required className="border-input/60" />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                    <Input id="confirmPassword" name="confirmPassword" type="password" required />
+                    <Label htmlFor="confirmPassword" className="text-foreground">Confirm New Password</Label>
+                    <Input id="confirmPassword" name="confirmPassword" type="password" required className="border-input/60" />
                   </div>
                   
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={updatingPassword}>
+                    <Button type="submit" disabled={updatingPassword} className="bg-primary hover:bg-primary/90">
                       {updatingPassword ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -378,18 +400,22 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <Smartphone className="h-5 w-5 text-primary" />
-                  <CardTitle>Two-Factor Authentication</CardTitle>
+            <Card className="border rounded-xl overflow-hidden shadow-sm">
+              <CardHeader className="bg-muted/30">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Smartphone className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>Two-Factor Authentication</CardTitle>
+                    <CardDescription>
+                      Add an extra layer of security to your account
+                    </CardDescription>
+                  </div>
                 </div>
-                <CardDescription>
-                  Add an extra layer of security to your account
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border">
                   <div>
                     <h3 className="font-medium">Enable 2FA</h3>
                     <p className="text-sm text-muted-foreground">
@@ -398,101 +424,127 @@ export default function SettingsPage() {
                   </div>
                   <Switch id="2fa" />
                 </div>
+                <div className="flex justify-end">
+                  <Button variant="outline" className="border-primary/30 hover:border-primary/60">
+                    Setup Two-Factor Authentication
+                  </Button>
+                </div>
               </CardContent>
-              <CardFooter>
-                <Button variant="outline">Setup Two-Factor Authentication</Button>
-              </CardFooter>
             </Card>
             
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <CardTitle>Session Management</CardTitle>
-                </div>
-                <CardDescription>
-                  Manage your active sessions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="rounded-lg border p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium">Current Session</h3>
-                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full dark:bg-green-900/30 dark:text-green-300">Active</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Device: {navigator.userAgent.includes('Windows') ? 'Windows PC' : 'Current Device'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Last active: Just now
-                    </p>
+            <Card className="border rounded-xl overflow-hidden shadow-sm">
+              <CardHeader className="bg-muted/30">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Shield className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>Session Management</CardTitle>
+                    <CardDescription>
+                      Manage your active sessions
+                    </CardDescription>
                   </div>
                 </div>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div className="rounded-lg border p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium">Current Session</h3>
+                    <span className="bg-green-100 text-green-800 text-xs px-2.5 py-1 rounded-full dark:bg-green-900/30 dark:text-green-300">Active</span>
+                  </div>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium w-20">Device:</span>
+                      <span>{navigator.userAgent.includes('Windows') ? 'Windows PC' : 'Current Device'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium w-20">Last active:</span>
+                      <span>Just now</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium w-20">Location:</span>
+                      <span>Unknown</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button variant="outline" className="border-primary/30 hover:border-primary/60">
+                    Sign out of all devices
+                  </Button>
+                </div>
               </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">Sign out of all devices</Button>
-              </CardFooter>
             </Card>
           </div>
         </TabsContent>
         
         <TabsContent value="connections">
           <div className="grid gap-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <Briefcase className="h-5 w-5 text-primary" />
-                  <CardTitle>Connected Accounts</CardTitle>
+            <Card className="border rounded-xl overflow-hidden shadow-sm">
+              <CardHeader className="bg-muted/30">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Briefcase className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>Connected Accounts</CardTitle>
+                    <CardDescription>
+                      Connect your account to other services for easier login
+                    </CardDescription>
+                  </div>
                 </div>
-                <CardDescription>
-                  Connect your account to other services for easier login
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {/* <Google className="h-5 w-5" /> */}
-                    <div>
-                      <h3 className="font-medium">Google</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Login with your Google account
-                      </p>
+              <CardContent className="pt-6 space-y-4">
+                <div className="grid gap-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/20 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
+                        <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12c0-5.5-4.5-10-10-10S2 6.5 2 12s4.5 10 10 10 10-4.5 10-10z"/><circle cx="12" cy="12" r="4"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Google</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Login with your Google account
+                        </p>
+                      </div>
                     </div>
+                    <Button onClick={() => handleConnectProvider('Google')} variant="outline" size="sm" className="border-primary/30 hover:border-primary/60 min-w-[100px]">
+                      Connect
+                    </Button>
                   </div>
-                  <Button onClick={() => handleConnectProvider('Google')} variant="outline" size="sm">
-                    Connect
-                  </Button>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {/* <Facebook className="h-5 w-5 text-blue-600" /> */}
-                    <div>
-                      <h3 className="font-medium">Facebook</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Login with your Facebook account
-                      </p>
+                  
+                  <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/20 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
+                        <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Facebook</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Login with your Facebook account
+                        </p>
+                      </div>
                     </div>
+                    <Button onClick={() => handleConnectProvider('Facebook')} variant="outline" size="sm" className="border-primary/30 hover:border-primary/60 min-w-[100px]">
+                      Connect
+                    </Button>
                   </div>
-                  <Button onClick={() => handleConnectProvider('Facebook')} variant="outline" size="sm">
-                    Connect
-                  </Button>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {/* <GithubIcon className="h-5 w-5" /> */}
-                    <div>
-                      <h3 className="font-medium">GitHub</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Login with your GitHub account
-                      </p>
+                  
+                  <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/20 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-muted p-2 rounded-lg">
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">GitHub</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Login with your GitHub account
+                        </p>
+                      </div>
                     </div>
+                    <Button onClick={() => handleConnectProvider('GitHub')} variant="outline" size="sm" className="border-primary/30 hover:border-primary/60 min-w-[100px]">
+                      Connect
+                    </Button>
                   </div>
-                  <Button onClick={() => handleConnectProvider('GitHub')} variant="outline" size="sm">
-                    Connect
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -500,18 +552,22 @@ export default function SettingsPage() {
         </TabsContent>
         
         <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <BellRing className="h-5 w-5 text-primary" />
-                <CardTitle>Notification Settings</CardTitle>
+          <Card className="border rounded-xl overflow-hidden shadow-sm">
+            <CardHeader className="bg-muted/30">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-primary/10 p-2 rounded-lg">
+                  <BellRing className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle>Notification Settings</CardTitle>
+                  <CardDescription>
+                    Manage how you receive notifications
+                  </CardDescription>
+                </div>
               </div>
-              <CardDescription>
-                Manage how you receive notifications
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+            <CardContent className="pt-6 space-y-6">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <h3 className="font-medium">Email Notifications</h3>
                   <p className="text-sm text-muted-foreground">
@@ -521,42 +577,48 @@ export default function SettingsPage() {
                 <Switch id="email-notifications" defaultChecked />
               </div>
               
-              <Separator />
-              
               <div className="space-y-4">
-                <h3 className="font-medium">Notification Preferences</h3>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm">Account Security Alerts</p>
+                <div className="bg-muted/20 p-4 rounded-lg">
+                  <h3 className="font-medium mb-3">Notification Preferences</h3>
+                  
+                  <div className="grid gap-3">
+                    <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-md transition-colors">
+                      <div>
+                        <p className="font-medium text-sm">Account Security Alerts</p>
+                        <p className="text-xs text-muted-foreground">Get notified about login attempts and security updates</p>
+                      </div>
+                      <Switch id="security-alerts" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-md transition-colors">
+                      <div>
+                        <p className="font-medium text-sm">Low Balance Alerts</p>
+                        <p className="text-xs text-muted-foreground">Get notified when your wallet balance drops below a threshold</p>
+                      </div>
+                      <Switch id="low-balance" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-md transition-colors">
+                      <div>
+                        <p className="font-medium text-sm">New Features and Updates</p>
+                        <p className="text-xs text-muted-foreground">Be the first to know about new Monetra features</p>
+                      </div>
+                      <Switch id="features-updates" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-md transition-colors">
+                      <div>
+                        <p className="font-medium text-sm">Tips and Educational Content</p>
+                        <p className="text-xs text-muted-foreground">Receive financial tips and educational resources</p>
+                      </div>
+                      <Switch id="tips" />
+                    </div>
                   </div>
-                  <Switch id="security-alerts" defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm">Low Balance Alerts</p>
-                  </div>
-                  <Switch id="low-balance" defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm">New Features and Updates</p>
-                  </div>
-                  <Switch id="features-updates" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm">Tips and Educational Content</p>
-                  </div>
-                  <Switch id="tips" />
                 </div>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button>Save Preferences</Button>
+            <CardFooter className="border-t bg-muted/10 py-4 px-6">
+              <Button className="ml-auto bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white">Save Preferences</Button>
             </CardFooter>
           </Card>
         </TabsContent>

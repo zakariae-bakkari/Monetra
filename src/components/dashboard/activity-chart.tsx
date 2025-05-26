@@ -68,11 +68,11 @@ export function ActivityChart({ transactions }: ActivityChartProps) {
   };
 
   return (
-    <Card>
+    <Card className="col-span-4 activity-chart">
       <CardHeader>
         <CardTitle>Monthly Activity</CardTitle>
       </CardHeader>
-      <CardContent className="h-[300px]">
+      <CardContent className="h-[300px] px-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={dailyData}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />

@@ -5,7 +5,7 @@ import { TransactionCard } from "@src/components/transactions/transaction-card";
 import { TransactionDetails } from "@src/components/transactions/transaction-details";
 import appwriteService from "@src/lib/store";
 import { Input } from "@src/components/ui/input";
-
+import { Calendar } from "@src/components/ui/calendar";
 import {
   Select,
   SelectContent,
@@ -19,31 +19,55 @@ import {
   PopoverTrigger,
 } from "@src/components/ui/popover";
 import { Button } from "@src/components/ui/button";
-import { format, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { CalendarIcon, Search, SlidersHorizontal, X } from "lucide-react";
+import { format, isAfter, isBefore, startOfDay, endOfDay, parseISO } from "date-fns";
+import { 
+  BarChart, 
+  CalendarIcon, 
+  ChevronDown, 
+  Clock, 
+  FileText, 
+  Filter, 
+  Search, 
+  SlidersHorizontal, 
+  Tag, 
+  Wallet, 
+  X 
+} from "lucide-react";
 import { Badge } from "@src/components/ui/badge";
 import { account } from "@src/lib/appwrite.config";
-import { Transaction, Wallet } from "@src/types/types";
-import { Calendar } from "../ui/calendar";
+import { Transaction, Wallet as WalletType } from "@src/types/types";
+import { DateRange } from "react-day-picker";
+import { cn } from "@src/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@src/components/ui/dropdown-menu";
+import { Card, CardContent } from "@src/components/ui/card";
+import { Separator } from "@src/components/ui/separator";
 
-export function TransactionList() {
+interface TransactionListProps {
+  filter?: "all" | "income" | "expense";
+}
+
+export function TransactionList({ filter = "all" }: TransactionListProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [wallets, setWallets] = useState<WalletType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTransactionId, setSelectedTransactionId] = useState<
-    string | null
-  >(null);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>(filter !== "all" ? filter.charAt(0).toUpperCase() + filter.slice(1) : "all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
-  const [showFilters, setShowFilters] = useState(false);
-  // Edit transaction
-  // const [showEditDialog, setShowEditDialog] = useState(false);
-  // const [transactionToEdit, setTransactionToEdit] = useState<any | null>(null);
+  const [walletFilter, setWalletFilter] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [showFilterBar, setShowFilterBar] = useState(false);
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "category">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const fetchData = async () => {
     try {
@@ -67,23 +91,29 @@ export function TransactionList() {
   useEffect(() => {
     fetchData();
   }, []);
+  
+  // Update typeFilter when the filter prop changes
+  useEffect(() => {
+    if (filter !== "all") {
+      setTypeFilter(filter.charAt(0).toUpperCase() + filter.slice(1));
+    } else {
+      setTypeFilter("all");
+    }
+  }, [filter]);
 
   const handleEditTransaction = (id: string) => {
-    // just give a modal with the transaction data
     const transaction = transactions.find((t) => t.$id === id);
     if (transaction) {
       setSelectedTransactionId(null);
-      // setShowEditDialog(true);
-      // setTransactionToEdit(transaction);
     }
   };
 
   const clearFilters = () => {
     setSearchTerm("");
-    setTypeFilter("all");
+    setTypeFilter(filter !== "all" ? filter.charAt(0).toUpperCase() + filter.slice(1) : "all");
     setCategoryFilter("all");
-    setDateFrom(undefined);
-    setDateTo(undefined);
+    setWalletFilter("all");
+    setDateRange(undefined);
   };
 
   // Extract unique categories for filter
@@ -106,21 +136,25 @@ export function TransactionList() {
     // Category filter
     const categoryMatch =
       categoryFilter === "all" || transaction.category === categoryFilter;
+      
+    // Wallet filter
+    const walletMatch =
+      walletFilter === "all" || transaction.wallets === walletFilter;
 
-    // Start date filter
+    // Date range filter
     const dateFromMatch =
-      !dateFrom ||
-      isAfter(new Date(transaction.date), startOfDay(dateFrom)) ||
-      isSameDay(new Date(transaction.date), dateFrom);
+      !dateRange?.from ||
+      isAfter(new Date(transaction.date), startOfDay(dateRange.from)) ||
+      isSameDay(new Date(transaction.date), dateRange.from);
 
     // End date filter
     const dateToMatch =
-      !dateTo ||
-      isBefore(new Date(transaction.date), endOfDay(dateTo)) ||
-      isSameDay(new Date(transaction.date), dateTo);
+      !dateRange?.to ||
+      isBefore(new Date(transaction.date), endOfDay(dateRange.to)) ||
+      isSameDay(new Date(transaction.date), dateRange.to);
 
     return (
-      searchMatch && typeMatch && categoryMatch && dateFromMatch && dateToMatch
+      searchMatch && typeMatch && categoryMatch && walletMatch && dateFromMatch && dateToMatch
     );
   });
 
@@ -133,56 +167,85 @@ export function TransactionList() {
     );
   }
 
-  // Sort transactions by date (newest first)
+  // Sort transactions
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (sortBy === "date") {
+      const dateComparison = sortOrder === "desc" 
+        ? new Date(b.date).getTime() - new Date(a.date).getTime()
+        : new Date(a.date).getTime() - new Date(b.date).getTime();
+      return dateComparison;
+    }
+    
+    if (sortBy === "amount") {
+      const amountA = a.type === "Expense" ? -a.amount : a.amount;
+      const amountB = b.type === "Expense" ? -b.amount : b.amount;
+      
+      return sortOrder === "desc" 
+        ? amountB - amountA
+        : amountA - amountB;
+    }
+    
+    if (sortBy === "category") {
+      const categoryComparison = a.category.localeCompare(b.category);
+      return sortOrder === "desc" 
+        ? -categoryComparison
+        : categoryComparison;
+    }
+    
+    return 0;
   });
 
   const activeFiltersCount = [
     searchTerm !== "",
-    typeFilter !== "all",
+    typeFilter !== "all" && typeFilter !== (filter !== "all" ? filter.charAt(0).toUpperCase() + filter.slice(1) : "all"),
     categoryFilter !== "all",
-    !!dateFrom,
-    !!dateTo,
+    walletFilter !== "all",
+    !!dateRange?.from,
+    !!dateRange?.to,
   ].filter(Boolean).length;
+  
+  // Group transactions by date
+  const groupedTransactions: Record<string, Transaction[]> = {};
+  
+  sortedTransactions.forEach(transaction => {
+    const date = format(new Date(transaction.date), 'yyyy-MM-dd');
+    if (!groupedTransactions[date]) {
+      groupedTransactions[date] = [];
+    }
+    groupedTransactions[date].push(transaction);
+  });
+  
+  // Sort dates in descending order
+  const sortedDates = Object.keys(groupedTransactions).sort((a, b) => {
+    return sortOrder === "desc" 
+      ? b.localeCompare(a) 
+      : a.localeCompare(b);
+  });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-2 items-center justify-between">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search transactions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-
-          <Button
-            variant="outline"
-            className="flex items-center gap-2"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
+    <div className="flex flex-col lg:flex-row gap-6">
+      {/* Filter Sidebar for Desktop */}
+      <div className={cn(
+        "hidden lg:block w-64 flex-shrink-0",
+        showFilterBar ? "lg:block" : "lg:hidden"
+      )}>
+        <div className="bg-card rounded-lg border p-4 sticky top-4 space-y-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-medium">Filters</h3>
             {activeFiltersCount > 0 && (
-              <Badge
-                variant="secondary"
-                className="h-5 w-5 p-0 flex items-center justify-center rounded-full"
-              >
-                {activeFiltersCount}
-              </Badge>
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
+                <X className="h-3.5 w-3.5 mr-1" /> Clear all
+              </Button>
             )}
-          </Button>
-        </div>
-
-        {showFilters && (
-          <div className="flex flex-wrap gap-2 items-end">
-            <div className="flex-1 min-w-[180px]">
+          </div>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Tag className="h-4 w-4 text-muted-foreground" /> Type
+              </label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -192,10 +255,13 @@ export function TransactionList() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="flex-1 min-w-[180px]">
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" /> Category
+              </label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -208,93 +274,379 @@ export function TransactionList() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <span className="text-sm text-muted-foreground mb-2 block">
-                Start date
-              </span>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-muted-foreground" /> Wallet
+              </label>
+              <Select value={walletFilter} onValueChange={setWalletFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Wallet" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All wallets</SelectItem>
+                  {wallets.map((wallet) => (
+                    <SelectItem key={wallet.$id} value={wallet.$id}>
+                      {wallet.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" /> Date range
+              </label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
-                    variant={"outline"}
-                    className={`w-[180px] justify-start text-left font-normal ${
-                      !dateFrom && "text-muted-foreground"
-                    }`}
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dateRange?.from && !dateRange?.to && "text-muted-foreground"
+                    )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Start date"}
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "MMM d, yyyy")} -{" "}
+                          {format(dateRange.to, "MMM d, yyyy")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "MMM d, yyyy")
+                      )
+                    ) : (
+                      "Select date range"
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                    mode="single"
-                    selected={dateFrom}
-                    onSelect={setDateFrom}
                     initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                    className="border rounded-md"
                   />
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div>
-              <span className="text-sm text-muted-foreground mb-2 block">
-                End date
-              </span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={`w-[180px] justify-start text-left font-normal ${
-                      !dateTo && "text-muted-foreground"
-                    }`}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateTo ? format(dateTo, "dd/MM/yyyy") : "End date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dateTo}
-                    onSelect={setDateTo}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+      {/* Main Content */}
+      <div className="flex-1">
+        <div className="flex flex-col gap-4 mb-6">
+          {/* Search and Controls */}
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search transactions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 h-10"
+              />
             </div>
 
-            <Button variant="ghost" onClick={clearFilters}>
-              <X className="h-4 w-4 mr-1" /> Reset
+            {/* Mobile Filter Toggle */}
+            <Button
+              variant="outline"
+              className="lg:hidden flex items-center gap-2"
+              onClick={() => setShowFilterBar(!showFilterBar)}
+            >
+              <Filter className="h-4 w-4" />
+              Filters
+              {activeFiltersCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 w-5 p-0 flex items-center justify-center rounded-full"
+                >
+                  {activeFiltersCount}
+                </Badge>
+              )}
             </Button>
+
+            {/* Sort Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex gap-1 items-center">
+                  <BarChart className="h-4 w-4 mr-1" /> 
+                  Sort by
+                  <ChevronDown className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem 
+                  checked={sortBy === "date" && sortOrder === "desc"}
+                  onCheckedChange={() => { setSortBy("date"); setSortOrder("desc"); }}
+                >
+                  Date (newest first)
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem 
+                  checked={sortBy === "date" && sortOrder === "asc"}
+                  onCheckedChange={() => { setSortBy("date"); setSortOrder("asc"); }}
+                >
+                  Date (oldest first)
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem 
+                  checked={sortBy === "amount" && sortOrder === "desc"}
+                  onCheckedChange={() => { setSortBy("amount"); setSortOrder("desc"); }}
+                >
+                  Amount (high to low)
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem 
+                  checked={sortBy === "amount" && sortOrder === "asc"}
+                  onCheckedChange={() => { setSortBy("amount"); setSortOrder("asc"); }}
+                >
+                  Amount (low to high)
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem 
+                  checked={sortBy === "category" && sortOrder === "asc"}
+                  onCheckedChange={() => { setSortBy("category"); setSortOrder("asc"); }}
+                >
+                  Category (A to Z)
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem 
+                  checked={sortBy === "category" && sortOrder === "desc"}
+                  onCheckedChange={() => { setSortBy("category"); setSortOrder("desc"); }}
+                >
+                  Category (Z to A)
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Toggle Filters Button */}
+            <Button
+              variant={showFilterBar ? "secondary" : "outline"}
+              className="hidden lg:flex items-center gap-1.5"
+              onClick={() => setShowFilterBar(!showFilterBar)}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              {showFilterBar ? "Hide Filters" : "Show Filters"}
+            </Button>
+          </div>
+          
+          {/* Mobile Filters (Expandable) */}
+          {showFilterBar && (
+            <Card className="lg:hidden border">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">Filters</h3>
+                  {activeFiltersCount > 0 && (
+                    <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
+                      <X className="h-4 w-4 mr-1" /> Clear all
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Type</label>
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All types</SelectItem>
+                        <SelectItem value="Expense">Expenses</SelectItem>
+                        <SelectItem value="Income">Income</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Category</label>
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All categories</SelectItem>
+                        {uniqueCategories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Wallet</label>
+                    <Select value={walletFilter} onValueChange={setWalletFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Wallet" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All wallets</SelectItem>
+                        {wallets.map((wallet) => (
+                          <SelectItem key={wallet.$id} value={wallet.$id}>
+                            {wallet.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Date range</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !dateRange?.from && !dateRange?.to && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateRange?.from ? (
+                            dateRange.to ? (
+                              <>
+                                {format(dateRange.from, "MMM d, yyyy")} -{" "}
+                                {format(dateRange.to, "MMM d, yyyy")}
+                              </>
+                            ) : (
+                              format(dateRange.from, "MMM d, yyyy")
+                            )
+                          ) : (
+                            "Select date range"
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          initialFocus
+                          mode="range"
+                          defaultMonth={dateRange?.from}
+                          selected={dateRange}
+                          onSelect={setDateRange}
+                          numberOfMonths={1}
+                          className="border rounded-md"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Active Filters Display */}
+          {activeFiltersCount > 0 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-muted-foreground">Active filters:</span>
+              {typeFilter !== "all" && typeFilter !== (filter !== "all" ? filter.charAt(0).toUpperCase() + filter.slice(1) : "all") && (
+                <Badge variant="secondary" className="flex gap-1 items-center">
+                  Type: {typeFilter}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => setTypeFilter(filter !== "all" ? filter.charAt(0).toUpperCase() + filter.slice(1) : "all")} 
+                  />
+                </Badge>
+              )}
+              
+              {categoryFilter !== "all" && (
+                <Badge variant="secondary" className="flex gap-1 items-center">
+                  Category: {categoryFilter}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => setCategoryFilter("all")} 
+                  />
+                </Badge>
+              )}
+              
+              {walletFilter !== "all" && (
+                <Badge variant="secondary" className="flex gap-1 items-center">
+                  Wallet: {wallets.find(w => w.$id === walletFilter)?.name || walletFilter}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => setWalletFilter("all")} 
+                  />
+                </Badge>
+              )}
+              
+              {dateRange?.from && (
+                <Badge variant="secondary" className="flex gap-1 items-center">
+                  Date: {format(dateRange.from, "MMM d")}
+                  {dateRange.to && ` - ${format(dateRange.to, "MMM d")}`}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => setDateRange(undefined)} 
+                  />
+                </Badge>
+              )}
+              
+              {searchTerm && (
+                <Badge variant="secondary" className="flex gap-1 items-center">
+                  Search: {searchTerm}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => setSearchTerm("")} 
+                  />
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Transaction List */}
+        {loading ? (
+          <div className="flex justify-center items-center py-20 border rounded-xl bg-muted/10">
+            <div className="flex flex-col items-center gap-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-muted-foreground">Loading transactions...</p>
+            </div>
+          </div>
+        ) : sortedTransactions.length > 0 ? (
+          <div className="space-y-6">
+            {sortedDates.map(date => (
+              <div key={date}>
+                <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 mb-3">
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    {format(parseISO(date), 'EEEE, MMMM d, yyyy')}
+                  </h3>
+                  <Separator className="mt-2" />
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {groupedTransactions[date].map((transaction) => (
+                    <TransactionCard
+                      key={transaction.$id}
+                      transaction={transaction}
+                      wallet={wallets.find((w) => w.$id === transaction.wallets)}
+                      onClick={() => setSelectedTransactionId(transaction.$id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 border rounded-xl bg-muted/10">
+            <h3 className="text-lg font-medium mb-2">No transactions found</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              {transactions.length > 0
+                ? "Try adjusting your filters or search terms to see more results."
+                : "Add your first transaction to start tracking your finances."}
+            </p>
+            {transactions.length > 0 && activeFiltersCount > 0 && (
+              <Button variant="outline" className="mt-4" onClick={clearFilters}>
+                Clear all filters
+              </Button>
+            )}
           </div>
         )}
       </div>
-
-      {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      ) : sortedTransactions.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4">
-          {sortedTransactions.map((transaction) => (
-            <TransactionCard
-              key={transaction.$id}
-              transaction={transaction}
-              wallet={wallets.find((w) => w.$id === transaction.wallets)}
-              onClick={() => setSelectedTransactionId(transaction.$id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10">
-          <h3 className="text-lg font-medium">No transactions found</h3>
-          <p className="text-muted-foreground">
-            {transactions.length > 0
-              ? "Try adjusting your filters."
-              : "Add your first transaction to start tracking your finances."}
-          </p>
-        </div>
-      )}
 
       {selectedTransactionId && (
         <TransactionDetails
