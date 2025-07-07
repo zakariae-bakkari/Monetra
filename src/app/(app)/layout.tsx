@@ -18,12 +18,14 @@ export default function ProtectedLayout({
    }
  }, [authStatus, router]);
 
-  return (
-    <div className="flex min-h-screen">
-      <div>
+return (
+  <div className="flex min-h-screen">
+    <div>
       <Navbar />
-      </div>
-      <main className="flex-1 max-h-screen overflow-y-scroll bg-background">{children}</main>
     </div>
-  );
+    <main className="flex-1 max-h-screen overflow-y-scroll bg-background">
+      {children}
+    </main>
+  </div>
+);
 }

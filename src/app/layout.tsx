@@ -36,19 +36,14 @@ export default function ProtectedLayout({
       .finally(() => setLoader(false));
   }, []);
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider value={{ authStatus, setAuthStatus }}>
           {!loader && (
             <>
-              <ThemeProvider
-                attribute={"class"}
-                defaultTheme={"system"}
-                enableSystem
-                disableTransitionOnChange
-              >
+              <ThemeProvider>
                 <TutorialProvider>
                   <TutorialManager>
                     {children}

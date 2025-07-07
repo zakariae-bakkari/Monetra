@@ -165,7 +165,7 @@ export default function WalletsPage() {
         </div>
         <Button
           onClick={() => setShowAddWallet(true)}
-          className="hover:border-primary/30 border-primary/60  border-1 bg-primary/40 hover:bg-primary/20 text-white hover:text-primary"
+          className="hover:border-primary border-primary  border-1 bg-primary hover:bg-primary text-primary-foreground "
         >
           <PlusCircle className="h-4 w-4 mr-1.5" /> New Wallet
         </Button>

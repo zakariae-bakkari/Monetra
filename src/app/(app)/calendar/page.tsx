@@ -145,7 +145,7 @@ export default function CalendarPage() {
             <span className="sr-only">Previous month</span>
           </Button>
           <h2 className="text-lg font-semibold px-2">
-            {format(currentMonth, "MMMM yyyy")}
+            {format(currentMonth, "MMM yyyy")}
           </h2>
           <Button variant="ghost" size="sm" onClick={nextMonth} className="h-8 w-8 p-0 rounded-md">
             <ChevronRight className="h-4 w-4" />
@@ -153,20 +153,25 @@ export default function CalendarPage() {
           </Button>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={goToToday} className="hover:border-accent/30 border-1 bg-none hover:bg-accent/20 text-white hover:text-accent">
+            <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={goToToday} 
+            className="hover:border-accent/30 border-[1px] hover:bg-accent text-foreground "
+            >
             Today
-          </Button>
-          <Button 
+            </Button>
+            <Button 
             variant="default" 
             size="sm" 
             onClick={() => {
               setSelectedDate(new Date());
               setShowTransactionDialog(true);
             }}
-            className="hover:border-primary/30 border-primary/60 border-1 bg-primary/40 hover:bg-primary/20 text-white hover:text-primary"
-          >
+            className="hover:bg-primary/90 bg-primary text-primary-foreground"
+            >
             <Plus className="h-4 w-4 mr-1" /> Add Transaction
-          </Button>
+            </Button>
           <div className="hidden sm:flex ml-2 rounded-md overflow-hidden border">
             <Button 
               variant={viewMode === 'month' ? "secondary" : "ghost"} 
@@ -457,15 +462,16 @@ export default function CalendarPage() {
               }) && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground mb-4">No transactions recorded this month</p>
-                  <Button 
+                    <Button 
                     onClick={() => {
                       setSelectedDate(new Date());
                       setShowTransactionDialog(true);
                     }}
-                    className="hover:border-primary/30 border-primary/60 border-1 bg-primary/40 hover:bg-primary/20 text-white hover:text-primary"
-                  >
+                    variant="outline"
+                    className="hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-colors"
+                    >
                     <Plus className="h-4 w-4 mr-1" /> Add Transaction
-                  </Button>
+                    </Button>
                 </div>
               )
             }

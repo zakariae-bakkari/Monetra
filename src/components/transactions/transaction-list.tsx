@@ -229,9 +229,9 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
         "hidden lg:block w-64 flex-shrink-0",
         showFilterBar ? "lg:block" : "lg:hidden"
       )}>
-        <div className="bg-card rounded-lg border p-4 sticky top-4 space-y-5">
+        <div className="bg-card rounded-lg border border-border p-4 sticky top-4 space-y-5">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-medium">Filters</h3>
+            <h3 className="font-medium text-foreground">Filters</h3>
             {activeFiltersCount > 0 && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
                 <X className="h-3.5 w-3.5 mr-1" /> Clear all
@@ -245,7 +245,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
                 <Tag className="h-4 w-4 text-muted-foreground" /> Type
               </label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full border-border/60 bg-background">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -261,7 +261,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
                 <FileText className="h-4 w-4 text-muted-foreground" /> Category
               </label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full border-border/60 bg-background">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -280,7 +280,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
                 <Wallet className="h-4 w-4 text-muted-foreground" /> Wallet
               </label>
               <Select value={walletFilter} onValueChange={setWalletFilter}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full border-border/60 bg-background">
                   <SelectValue placeholder="Wallet" />
                 </SelectTrigger>
                 <SelectContent>
@@ -303,7 +303,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal border-border/60",
                       !dateRange?.from && !dateRange?.to && "text-muted-foreground"
                     )}
                   >
@@ -350,14 +350,14 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
                 placeholder="Search transactions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 h-10"
+                className="pl-8 h-10 border-border/60"
               />
             </div>
 
             {/* Mobile Filter Toggle */}
             <Button
               variant="outline"
-              className="lg:hidden flex items-center gap-2"
+              className="lg:hidden flex items-center gap-2 border-border/60"
               onClick={() => setShowFilterBar(!showFilterBar)}
             >
               <Filter className="h-4 w-4" />
@@ -365,7 +365,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
               {activeFiltersCount > 0 && (
                 <Badge
                   variant="secondary"
-                  className="h-5 w-5 p-0 flex items-center justify-center rounded-full"
+                  className="h-5 w-5 p-0 flex items-center justify-center rounded-full bg-secondary text-secondary-foreground"
                 >
                   {activeFiltersCount}
                 </Badge>
@@ -375,7 +375,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
             {/* Sort Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex gap-1 items-center">
+                <Button variant="outline" className="flex gap-1 items-center border-border/60">
                   <BarChart className="h-4 w-4 mr-1" /> 
                   Sort by
                   <ChevronDown className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
@@ -436,10 +436,10 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
           
           {/* Mobile Filters (Expandable) */}
           {showFilterBar && (
-            <Card className="lg:hidden border">
+            <Card className="lg:hidden border border-border">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium">Filters</h3>
+                  <h3 className="font-medium text-foreground">Filters</h3>
                   {activeFiltersCount > 0 && (
                     <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
                       <X className="h-4 w-4 mr-1" /> Clear all
@@ -451,7 +451,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Type</label>
                     <Select value={typeFilter} onValueChange={setTypeFilter}>
-                      <SelectTrigger>
+                      <SelectTrigger className="border-border/60 bg-background">
                         <SelectValue placeholder="Type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -465,7 +465,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Category</label>
                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                      <SelectTrigger>
+                      <SelectTrigger className="border-border/60 bg-background">
                         <SelectValue placeholder="Category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -484,7 +484,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Wallet</label>
                     <Select value={walletFilter} onValueChange={setWalletFilter}>
-                      <SelectTrigger>
+                      <SelectTrigger className="border-border/60 bg-background">
                         <SelectValue placeholder="Wallet" />
                       </SelectTrigger>
                       <SelectContent>
@@ -505,7 +505,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left font-normal",
+                            "w-full justify-start text-left font-normal border-border/60",
                             !dateRange?.from && !dateRange?.to && "text-muted-foreground"
                           )}
                         >
@@ -547,7 +547,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-sm text-muted-foreground">Active filters:</span>
               {typeFilter !== "all" && typeFilter !== (filter !== "all" ? filter.charAt(0).toUpperCase() + filter.slice(1) : "all") && (
-                <Badge variant="secondary" className="flex gap-1 items-center">
+                <Badge variant="secondary" className="flex gap-1 items-center bg-secondary text-secondary-foreground">
                   Type: {typeFilter}
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
@@ -557,7 +557,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
               )}
               
               {categoryFilter !== "all" && (
-                <Badge variant="secondary" className="flex gap-1 items-center">
+                <Badge variant="secondary" className="flex gap-1 items-center bg-secondary text-secondary-foreground">
                   Category: {categoryFilter}
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
@@ -567,7 +567,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
               )}
               
               {walletFilter !== "all" && (
-                <Badge variant="secondary" className="flex gap-1 items-center">
+                <Badge variant="secondary" className="flex gap-1 items-center bg-secondary text-secondary-foreground">
                   Wallet: {wallets.find(w => w.$id === walletFilter)?.name || walletFilter}
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
@@ -577,7 +577,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
               )}
               
               {dateRange?.from && (
-                <Badge variant="secondary" className="flex gap-1 items-center">
+                <Badge variant="secondary" className="flex gap-1 items-center bg-secondary text-secondary-foreground">
                   Date: {format(dateRange.from, "MMM d")}
                   {dateRange.to && ` - ${format(dateRange.to, "MMM d")}`}
                   <X 
@@ -588,7 +588,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
               )}
               
               {searchTerm && (
-                <Badge variant="secondary" className="flex gap-1 items-center">
+                <Badge variant="secondary" className="flex gap-1 items-center bg-secondary text-secondary-foreground">
                   Search: {searchTerm}
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
@@ -602,7 +602,7 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
 
         {/* Transaction List */}
         {loading ? (
-          <div className="flex justify-center items-center py-20 border rounded-xl bg-muted/10">
+          <div className="flex justify-center items-center py-20 border border-border rounded-xl bg-card/50">
             <div className="flex flex-col items-center gap-2">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               <p className="text-muted-foreground">Loading transactions...</p>
@@ -632,15 +632,15 @@ export function TransactionList({ filter = "all" }: TransactionListProps) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 border rounded-xl bg-muted/10">
-            <h3 className="text-lg font-medium mb-2">No transactions found</h3>
+          <div className="text-center py-16 border border-border rounded-xl bg-card/50">
+            <h3 className="text-lg font-medium mb-2 text-foreground">No transactions found</h3>
             <p className="text-muted-foreground max-w-md mx-auto">
               {transactions.length > 0
                 ? "Try adjusting your filters or search terms to see more results."
                 : "Add your first transaction to start tracking your finances."}
             </p>
             {transactions.length > 0 && activeFiltersCount > 0 && (
-              <Button variant="outline" className="mt-4" onClick={clearFilters}>
+              <Button variant="outline" className="mt-4 border-border/60" onClick={clearFilters}>
                 Clear all filters
               </Button>
             )}

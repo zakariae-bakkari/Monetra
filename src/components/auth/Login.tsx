@@ -77,7 +77,7 @@ const Login = () => {
    return (
       <div className="min-h-screen flex flex-col md:flex-row">
          {/* Left side - Brand panel */}
-         <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-secondary p-8 text-white justify-center items-center">
+         <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-primary/60 p-8 text-primary-foreground justify-center items-center">
             <div className="max-w-md mx-auto">
                <motion.div 
                   className="space-y-6"
@@ -87,24 +87,24 @@ const Login = () => {
                >
                   <div className="flex items-center space-x-3">
                      <Coins className="h-10 w-10" />
-                     <h1 className="text-3xl font-bold">Monetra</h1>
+                     <h1 className="text-3xl font-bold"><Link href={"/"}>Monetra</Link></h1>
                   </div>
                   
                   <h2 className="text-2xl font-semibold">Welcome back!</h2>
                   
-                  <p className="text-white/80">
+                  <p className="text-primary-foreground/80">
                      Log in to continue your journey toward financial success with Monetra&apos;s powerful tools and insights.
                   </p>
                   
                   <div className="pt-6">
-                     <div className="border-t border-white/20 pt-6">
+                     <div className="border-t border-primary-foreground/20 pt-6">
                         <div className="flex items-center space-x-4">
-                           <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center">
+                           <div className="h-12 w-12 rounded-full bg-primary-foreground/10 flex items-center justify-center">
                               <Coins className="h-6 w-6" />
                            </div>
                            <div>
                               <h3 className="font-medium">Smart Financial Tracking</h3>
-                              <p className="text-sm text-white/70">Manage your finances with ease</p>
+                              <p className="text-sm text-primary-foreground/70">Manage your finances with ease</p>
                            </div>
                         </div>
                      </div>
@@ -160,7 +160,7 @@ const Login = () => {
                               type="email"
                               autoComplete="email"
                               required
-                              className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5"
+                              className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5 bg-secondary/50"
                               placeholder="you@example.com"
                               value={formData.email}
                               onChange={handleChange}
@@ -185,7 +185,7 @@ const Login = () => {
                               type={showPassword ? "text" : "password"}
                               autoComplete="current-password"
                               required
-                              className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5"
+                              className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5 bg-secondary/50"
                               placeholder="••••••••"
                               value={formData.password}
                               onChange={handleChange}
@@ -193,7 +193,7 @@ const Login = () => {
                            <button 
                               type="button" 
                               onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground cursor-pointer"
                            >
                               {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
                            </button>
@@ -206,13 +206,13 @@ const Login = () => {
                         type="submit"
                         disabled={isLoading}
                         className={cn(
-                           "w-full py-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium",
+                           "w-full py-6 bg-primary text-primary-foreground font-medium cursor-pointer",
                            isLoading && "opacity-70 pointer-events-none"
                         )}
                      >
                         {isLoading ? (
                            <>
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-3"></div>
                               Signing in...
                            </>
                         ) : (

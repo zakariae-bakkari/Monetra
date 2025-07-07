@@ -157,7 +157,7 @@ const Signup = () => {
                     name="name"
                     type="text"
                     required
-                    className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5"
+                    className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5 bg-secondary/50"
                     placeholder="John Doe"
                     value={formData.name}
                     onChange={handleChange}
@@ -180,7 +180,7 @@ const Signup = () => {
                     type="email"
                     autoComplete="email"
                     required
-                    className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5"
+                    className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5 bg-secondary/50"
                     placeholder="you@example.com"
                     value={formData.email}
                     onChange={handleChange}
@@ -203,7 +203,7 @@ const Signup = () => {
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
                     required
-                    className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5"
+                    className="pl-10 border-border/60 focus-visible:ring-primary/30 py-5 bg-secondary/50"
                     placeholder="Create a strong password"
                     value={formData.password}
                     onChange={handleChange}
@@ -211,7 +211,7 @@ const Signup = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     {showPassword ? (
                       <EyeOff className="h-[18px] w-[18px]" />
@@ -231,13 +231,13 @@ const Signup = () => {
                 type="submit"
                 disabled={isLoading}
                 className={cn(
-                  "w-full py-6 bg-accent hover:bg-accent/90 text-accent-foreground font-medium",
+                  "w-full py-6 bg-primary text-primary-foreground font-medium cursor-pointer",
                   isLoading && "opacity-70 pointer-events-none"
                 )}
               >
                 {isLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-accent-foreground mr-3"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-3"></div>
                     Creating your account...
                   </>
                 ) : (
@@ -288,7 +288,7 @@ const Signup = () => {
           >
             <div className="flex items-center space-x-3">
               <Coins className="h-10 w-10" />
-              <h1 className="text-3xl font-bold">Monetra</h1>
+              <h1 className="text-3xl font-bold"><Link href={"/"}>Monetra</Link></h1>
             </div>
 
             <div>

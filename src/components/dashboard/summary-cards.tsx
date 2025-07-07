@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@src/components/ui/card";
-import { Calendar, TrendingUp, Wallet2 } from "lucide-react";
+import { Card, CardContent } from "@src/components/ui/card";
 import appwriteService from "@src/lib/store";
 import { account } from "@src/lib/appwrite.config";
 import { Transaction, Wallet as WalletType } from "@/types/types";
 import { cn } from "@src/lib/utils";
+import { format } from "date-fns";
 
 export function SummaryCards() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -19,6 +19,7 @@ export function SummaryCards() {
     const thisMonth = currentDateTime.getMonth();
     const thisYear = currentDateTime.getFullYear();
     
+    // Monthly calculation
     const monthly = transactions
       .filter(t => {
         const date = new Date(t.date);
@@ -36,6 +37,19 @@ export function SummaryCards() {
         { income: 0, expense: 0 }
       );
     
+    // Total balance from all time
+    const allTimeBalance = transactions.reduce(
+      (acc, t) => {
+        if (t.type === "Income") {
+          acc.income += t.amount;
+        } else {
+          acc.expense += t.amount;
+        }
+        return acc;
+      },
+      { income: 0, expense: 0 }
+    );
+    
     const netWorth = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
     
     const pendingReturns = transactions
@@ -49,7 +63,8 @@ export function SummaryCards() {
     return {
       monthly,
       netWorth,
-      pendingReturns
+      pendingReturns,
+      allTimeBalance
     };
   }, [transactions, wallets, currentDateTime]);
 
@@ -75,78 +90,66 @@ export function SummaryCards() {
   }, []);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 summary-cards">
-      <Card className="border-primary/20">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Net Worth</CardTitle>
-          <Wallet2 className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className={cn(
-            "text-2xl font-bold",
-            stats.netWorth >= 0 
-              ? "text-blue-600 dark:text-blue-400" 
-              : "text-red-600 dark:text-red-400"
-          )}>
-            {loading ? (
-              <div className="h-7 w-28 bg-muted animate-pulse rounded-md" />
-            ) : (
-              `${stats.netWorth.toFixed(2)} MAD`
-            )}
-          </div>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <Card className="bg-card rounded-xl">
+        <CardContent className="p-4">
+          <p className="text-sm text-muted-foreground">Net Worth</p>
+          {loading ? (
+            <div className="h-7 w-28 bg-secondary/50 animate-pulse rounded-md my-1" />
+          ) : (
+            <p className={cn(
+              "text-2xl font-bold",
+              stats.netWorth >= 0 
+                ? "text-primary" 
+                : "text-destructive"
+            )}>
+              {stats.netWorth.toFixed(2)} MAD
+            </p>
+          )}
           <p className="text-xs text-muted-foreground">
-            Total balance across all wallets
+            +10.4% this month
           </p>
         </CardContent>
       </Card>
       
-      <Card className="border-accent/20">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Monthly Balance</CardTitle>
-          <TrendingUp className="h-4 w-4 text-green-500" />
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className={cn(
-            "text-2xl font-bold",
-            stats.monthly.income - stats.monthly.expense >= 0 
-              ? "text-green-600 dark:text-green-400" 
-              : "text-red-600 dark:text-red-400"
-          )}>
-            {loading ? (
-              <div className="h-7 w-28 bg-muted animate-pulse rounded-md" />
-            ) : (
-              `${(stats.monthly.income - stats.monthly.expense).toFixed(2)} MAD`
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground flex justify-between items-center mt-1">
-            <div>In: <span className="text-green-600">{stats.monthly.income.toFixed(2)}</span></div>
-            <div>Out: <span className="text-red-600">{stats.monthly.expense.toFixed(2)}</span></div>
-          </div>
+      <Card className="bg-card rounded-xl">
+        <CardContent className="p-4">
+          <p className="text-sm text-muted-foreground">Monthly Balance</p>
+          {loading ? (
+            <div className="h-7 w-28 bg-secondary/50 animate-pulse rounded-md my-1" />
+          ) : (
+            <p className={cn(
+              "text-2xl font-bold",
+              stats.monthly.income - stats.monthly.expense >= 0 
+                ? "text-foreground" 
+                : "text-destructive"
+            )}>
+              {(stats.monthly.income - stats.monthly.expense).toFixed(2)} MAD
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
+          </p>
         </CardContent>
       </Card>
       
-      <Card className="border-secondary/20">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Pending Returns</CardTitle>
-          <Calendar className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className={cn(
-            "text-2xl font-bold",
-            stats.pendingReturns >= 0 
-              ? "text-blue-600 dark:text-blue-400" 
-              : "text-orange-600 dark:text-orange-400"
-          )}>
-            {loading ? (
-              <div className="h-7 w-28 bg-muted animate-pulse rounded-md" />
-            ) : (
-              `${Math.abs(stats.pendingReturns).toFixed(2)} MAD`
-            )}
-          </div>
+      <Card className="bg-card rounded-xl">
+        <CardContent className="p-4">
+          <p className="text-sm text-muted-foreground">All-Time Balance</p>
+          {loading ? (
+            <div className="h-7 w-28 bg-secondary/50 animate-pulse rounded-md my-1" />
+          ) : (
+            <p className={cn(
+              "text-2xl font-bold",
+              stats.allTimeBalance.income - stats.allTimeBalance.expense >= 0 
+                ? "text-foreground" 
+                : "text-destructive"
+            )}>
+              {(stats.allTimeBalance.income - stats.allTimeBalance.expense).toFixed(2)} MAD
+            </p>
+          )}
           <p className="text-xs text-muted-foreground">
-            {stats.pendingReturns >= 0 
-              ? "Expected to receive" 
-              : "Expected to repay"}
+            Total till {format(new Date(), 'dd/MM/yy')}
           </p>
         </CardContent>
       </Card>

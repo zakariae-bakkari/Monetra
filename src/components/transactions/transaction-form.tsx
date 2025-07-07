@@ -29,7 +29,6 @@ import {
   SelectValue,
 } from "@src/components/ui/select";
 import { Checkbox } from "@src/components/ui/checkbox";
-import { Textarea } from "@src/components/ui/textarea";
 import appwriteService from "@src/lib/store";
 import { Wallet as WalletType } from "@src/types/types";
 import { UseFormReturn } from "react-hook-form";
@@ -56,14 +55,16 @@ export const transactionFormSchema = z
   .superRefine(async (data, ctx) => {
     try {
       const wallet = await appwriteService.fetchWallet(data.wallets);
-      
+
       if (wallet && data.type === "Expense") {
         if (wallet.type !== "Credit Card") {
           const currentBalance = wallet.balance;
           if (currentBalance < data.amount) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: `Insufficient funds in ${wallet.name}. Available: ${currentBalance.toFixed(2)} MAD`,
+              message: `Insufficient funds in ${
+                wallet.name
+              }. Available: ${currentBalance.toFixed(2)} MAD`,
               path: ["amount"],
             });
           }
@@ -74,7 +75,9 @@ export const transactionFormSchema = z
             if (Math.abs(potentialBalance) > wallet.creditLimit) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: `This expense would exceed the credit limit of ${wallet.creditLimit.toFixed(2)} MAD`,
+                message: `This expense would exceed the credit limit of ${wallet.creditLimit.toFixed(
+                  2
+                )} MAD`,
                 path: ["amount"],
               });
             }
@@ -119,7 +122,7 @@ export function TransactionForm({
 
   const watchHasExpectedReturnDate = form.watch("hasExpectedReturnDate");
   const watchTransactionType = form.watch("type");
-  
+
   // Animation variants
   const formVariants = {
     hidden: { opacity: 0 },
@@ -127,42 +130,51 @@ export function TransactionForm({
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-      }
-    }
+      },
+    },
   };
-  
+
   const fieldVariants = {
     hidden: { y: 10, opacity: 0 },
     visible: {
-      y: 0, 
+      y: 0,
       opacity: 1,
       transition: {
         type: "spring",
         stiffness: 200,
-        damping: 20
-      }
-    }
+        damping: 20,
+      },
+    },
   };
 
   return (
     <Form {...form}>
-      <motion.form 
-        onSubmit={form.handleSubmit(onSubmit)} 
+      <motion.form
+        onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-6"
         variants={formVariants}
         initial="hidden"
         animate="visible"
       >
-        <motion.div variants={fieldVariants} className="flex items-center justify-center mb-4">
-          <div className={`
+        <motion.div
+          variants={fieldVariants}
+          className="flex items-center justify-center mb-4"
+        >
+          <div
+            className={`
             flex items-center gap-4 p-2 px-4 rounded-full bg-secondary/5 border border-border
-          `}>
+          `}
+          >
             <Button
               type="button"
-              variant={watchTransactionType === 'Expense' ? "default" : "ghost"}
+              variant={watchTransactionType === "Expense" ? "default" : "ghost"}
               className={`
                 rounded-full px-4 gap-2 text-sm
-                ${watchTransactionType === 'Expense' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}
+                ${
+                  watchTransactionType === "Expense"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground"
+                }
               `}
               onClick={() => form.setValue("type", "Expense")}
             >
@@ -171,10 +183,14 @@ export function TransactionForm({
             </Button>
             <Button
               type="button"
-              variant={watchTransactionType === 'Income' ? "default" : "ghost"}
+              variant={watchTransactionType === "Income" ? "default" : "ghost"}
               className={`
                 rounded-full px-4 gap-2 text-sm
-                ${watchTransactionType === 'Income' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}
+                ${
+                  watchTransactionType === "Income"
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground"
+                }
               `}
               onClick={() => form.setValue("type", "Income")}
             >
@@ -255,13 +271,13 @@ export function TransactionForm({
             )}
           />
         </motion.div>
-        
-        <motion.div variants={fieldVariants} className="grid grid-cols-1 gap-4">
+
+        <motion.div variants={fieldVariants} className="grid grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="category"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="col-span-1 w-full">
                 <FormLabel>Category</FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -283,30 +299,34 @@ export function TransactionForm({
                 <FormMessage />
               </FormItem>
             )}
-          />
-        </motion.div>
-
-        <motion.div variants={fieldVariants}>
+          />{" "}
           <FormField
             control={form.control}
             name="wallets"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="col-span-2">
                 <FormLabel className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-muted-foreground" />
                   Wallet
                 </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl className="w-full">
                     <SelectTrigger className="border-border/60 focus-visible:ring-primary/30">
                       <SelectValue placeholder="Select a wallet" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className="w-full">
                     {wallets.map((wallet) => (
-                      <SelectItem key={wallet.$id} value={wallet.$id} className="flex items-center">
-                        {wallet.name} ({wallet.balance.toFixed(2)} MAD)
-                      </SelectItem>
+                        <SelectItem
+                        key={wallet.$id}
+                        value={wallet.$id}
+                        className="flex items-center"
+                        >
+                        {wallet.name.length > 10 ? wallet.name.slice(0, 10) + '...' : wallet.name} ({wallet.balance.toFixed(2)} MAD)
+                        </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -315,6 +335,7 @@ export function TransactionForm({
             )}
           />
         </motion.div>
+
 
         <motion.div variants={fieldVariants}>
           <FormField
@@ -364,7 +385,7 @@ export function TransactionForm({
         {watchHasExpectedReturnDate && (
           <motion.div
             variants={fieldVariants}
-            initial="hidden" 
+            initial="hidden"
             animate="visible"
           >
             <FormField
@@ -412,27 +433,10 @@ export function TransactionForm({
           </motion.div>
         )}
 
-        <motion.div variants={fieldVariants}>
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Notes (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Additional notes about this transaction"
-                    className="border-border/60 focus-visible:ring-primary/30 resize-none min-h-[100px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </motion.div>
-
-        <motion.div variants={fieldVariants} className="flex justify-end space-x-2">
+        <motion.div
+          variants={fieldVariants}
+          className="flex justify-end space-x-2"
+        >
           <Button
             type="button"
             variant="outline"
@@ -442,10 +446,14 @@ export function TransactionForm({
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isLoading}
-            className={watchTransactionType === 'Income' ? 'bg-accent hover:bg-accent/90' : 'bg-primary hover:bg-primary/90'}
+            className={
+              watchTransactionType === "Income"
+                ? "bg-accent hover:bg-accent/90"
+                : "bg-primary hover:bg-primary/90"
+            }
           >
             {isLoading ? (
               <>
@@ -453,7 +461,7 @@ export function TransactionForm({
                 Processing...
               </>
             ) : (
-              `Save ${watchTransactionType === 'Income' ? 'Income' : 'Expense'}`
+              `Save ${watchTransactionType === "Income" ? "Income" : "Expense"}`
             )}
           </Button>
         </motion.div>

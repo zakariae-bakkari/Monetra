@@ -46,25 +46,25 @@ export default function TransactionsPage() {
         <div className="flex flex-wrap gap-3 items-center justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9chover:border-accent/30 border-1 bg-none hover:bg-accent/20 text-white hover:text-accent group">
-                <Download className="h-4 w-4 mr-1 group-hover:text-accent" /> Export
+              <Button variant="outline" size="sm" className="group">
+                <Download className="h-4 w-4 mr-1" /> Export
                 <ArrowUpDown className="h-3.5 w-3.5 ml-1.5 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-secondary">
                 <Download className="h-4 w-4 mr-2" /> Export as CSV
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-secondary">
                 <Download className="h-4 w-4 mr-2" /> Export as PDF
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-secondary">
                 <Upload className="h-4 w-4 mr-2" /> Import transactions
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button 
-            className="hover:border-primary/30 border-primary/60  border-1 bg-primary/40 hover:bg-primary/20 text-white hover:text-primary"
+            className="hover:border-primary border-primary  border-1 bg-primary hover:bg-primary text-primary-foreground"
             onClick={() => setShowNewTransaction(true)}
           >
             <Plus className="h-4 w-4 mr-1.5" />

@@ -9,9 +9,14 @@ import { WalletAlerts } from "@/components/dashboard/wallet-alerts";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { account } from "@/lib/appwrite.config";
-import appwriteService from "@/lib/store"; // Import the direct service instead of hooks
+import appwriteService from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ArrowUpFromLine, BarChart2, CalendarClock, LineChart, Loader2, PieChart, Plus, TrendingUp, Wallet2 } from "lucide-react";
+import { 
+  AlertTriangle, 
+  BarChart2, 
+  ChevronRight,  
+  Loader2, 
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Transaction, Wallet } from "@/types/types";
 
@@ -41,7 +46,10 @@ export default function DashboardPage() {
 
         // Check if there's data in localStorage to import
         const localTransactions = localStorage.getItem('transactions');
-        setHasLocalData(!!localTransactions);
+        if (localTransactions && JSON.parse(localTransactions).length > 0) {
+          setHasLocalData(true);
+        }
+        
       } catch (error) {
         console.error("Error initializing data:", error);
         toast({
@@ -57,48 +65,84 @@ export default function DashboardPage() {
     initializeData();
   }, [toast]);
 
-  // Function to import transactions from localStorage
-  const handleImportFromLocal = async () => {
+  const importLocalData = async () => {
+    setImporting(true);
     try {
-      setImporting(true);
-      const user = await account.get();
+      const localTransactions = localStorage.getItem('transactions');
+      const localWallets = localStorage.getItem('wallets');
       
-      // Get transactions from localStorage
-      const localTransactionsJson = localStorage.getItem('transactions');
-      if (!localTransactionsJson) {
+      if (!localTransactions && !localWallets) {
         toast({
-          title: "No Data Found",
-          description: "There are no transactions stored locally",
-          variant: "destructive",
+          title: "No local data found",
+          description: "There is no local data to import",
         });
         return;
       }
       
-      const localTransactions = JSON.parse(localTransactionsJson);
+      const userId = (await account.get()).$id;
       
-      // Create a promise for each transaction to import
-      const importPromises = localTransactions.map((transaction: Omit<Transaction, '$id' | 'userId'>) => 
-        appwriteService.createTransaction(transaction, user.$id)
-      );
+      // Import wallets first, then transactions that reference those wallets
+      if (localWallets) {
+        const parsedWallets = JSON.parse(localWallets);
+        for (const wallet of parsedWallets) {
+          // Remove any existing IDs to create fresh entries
+          delete wallet.$id;
+          wallet.userId = userId;
+          
+          await appwriteService.createWallet(wallet, userId);
+        }
+      }
       
-      await Promise.all(importPromises);
+      if (localTransactions) {
+        const parsedTransactions = JSON.parse(localTransactions);
+        // Re-fetch wallets to get their new IDs
+        const updatedWallets = await appwriteService.fetchWallets(userId);
+        
+        // Create a mapping of local wallet name -> new wallet ID
+        const walletMapping: Record<string, string> = {};
+        updatedWallets.forEach(w => {
+          walletMapping[w.name] = w.$id;
+        });
+        
+        for (const tx of parsedTransactions) {
+          // Remove any existing IDs to create fresh entries
+          delete tx.$id;
+          tx.userId = userId;
+          
+          // Replace wallet references with the new wallet IDs
+          if (typeof tx.wallets === 'string') {
+            const oldWalletName = tx.wallets;
+            tx.wallets = walletMapping[oldWalletName] || tx.wallets;
+          } else if (Array.isArray(tx.wallets)) {
+            tx.wallets = tx.wallets.map((w: string) => walletMapping[w] || w);
+          }
+          
+          await appwriteService.createTransaction(tx, userId);
+        }
+      }
       
-      // Refresh transactions after import
-      const updatedTransactions = await appwriteService.fetchTransactions(user.$id);
-      setTransactions(updatedTransactions);
+      // Refresh the data
+      const [refreshedWallets, refreshedTransactions] = await Promise.all([
+        appwriteService.fetchWallets(userId),
+        appwriteService.fetchTransactions(userId)
+      ]);
       
-      // Clear local storage after successful import
-      localStorage.removeItem('transactions');
+      setWallets(refreshedWallets);
+      setTransactions(refreshedTransactions);
       setHasLocalData(false);
       
+      // Clear the local storage
+      localStorage.removeItem('transactions');
+      localStorage.removeItem('wallets');
+      
       toast({
-        title: "Import Successful",
-        description: "Your local data has been imported to Appwrite successfully",
+        title: "Import successful",
+        description: "Your local data has been imported successfully",
       });
     } catch (error) {
-      console.error("Error importing data:", error);
+      console.error("Error importing local data:", error);
       toast({
-        title: "Import Failed",
+        title: "Import failed",
         description: "There was an error importing your local data",
         variant: "destructive",
       });
@@ -117,168 +161,91 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-[1400px] mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+    <main className="flex-1 p-6 overflow-y-auto">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-4xl font-bold mb-1 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Dashboard</h1>
-          <p className="text-muted-foreground">Financial overview for {currentMonth}</p>
-        </div>
-        
-        {hasLocalData && (
-          <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-5 border border-accent/20 shadow-sm flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
-            <div>
-              <h3 className="font-semibold text-primary flex items-center gap-2">
-                <ArrowUpFromLine className="h-4 w-4" />
-                Local data found!
-              </h3>
-              <p className="text-sm text-muted-foreground">We found financial data stored in your browser. Do you want to import it to your account?</p>
-            </div>
-            <Button 
-              onClick={handleImportFromLocal} 
-              disabled={importing}
-            >
-              {importing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Importing...
-                </>
-              ) : (
-                <>
-                  <ArrowUpFromLine className="mr-2 h-4 w-4" />
-                  Import Data
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-      </div>
-      
-      <div className="space-y-8">
-        {wallets.length > 0 && (
-          <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-            <div className="bg-amber-50 dark:bg-amber-900/10 border-b p-5 flex items-start md:items-center gap-3 justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-amber-100 dark:bg-amber-800/30 p-2 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold">Alerts & Notifications</h2>
-                  <p className="text-sm text-muted-foreground">Important updates about your accounts</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 p-0 h-8 px-2">
-                Dismiss All
-              </Button>
-            </div>
-            <div className="p-5">
-              <WalletAlerts wallets={wallets} />
-            </div>
-          </div>
-        )}
-        
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <Wallet2 className="h-5 w-5 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold">Wallet Overview</h2>
-            </div>
-            <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary/50">
-              Manage Wallets
-            </Button>
-          </div>
-          <WalletCards wallets={wallets} />
-        </div>
-        
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <BarChart2 className="h-5 w-5 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold">Financial Summary</h2>
-            </div>
-            <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary/50">
-              View Details
-            </Button>
-          </div>
-          <SummaryCards />
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Financial overview for {currentMonth}</p>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-        <div className="lg:col-span-2 bg-card rounded-xl border shadow-sm overflow-hidden">
-          <div className="bg-muted/30 border-b p-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <LineChart className="h-5 w-5 text-primary" />
-              </div>
+      {hasLocalData && (
+        <div className="bg-card rounded-xl p-4 mb-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <AlertTriangle className="text-yellow-500 mr-3" />
               <div>
-                <h2 className="text-xl font-semibold">Monthly Activity</h2>
-                <p className="text-sm text-muted-foreground">Income and expenses over time</p>
+                <p className="font-semibold">Alerts & Notifications</p>
+                <p className="text-sm text-muted-foreground">Unusual payment added to your sub-accounts</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" className="text-xs h-8 px-2">1M</Button>
-              <Button variant="ghost" size="sm" className="text-xs h-8 px-2">3M</Button>
-              <Button variant="secondary" size="sm" className="text-xs h-8 px-2">6M</Button>
-              <Button variant="ghost" size="sm" className="text-xs h-8 px-2">1Y</Button>
-            </div>
+            <Button
+              size="sm"
+              onClick={importLocalData}
+              disabled={importing}
+              variant="ghost"
+              className="text-primary font-semibold"
+            >
+              View All
+            </Button>
           </div>
-          <div className="p-5">
+          <div className="mt-4 p-3 bg-secondary/50 rounded-lg flex justify-between items-center">
+            <p className="text-sm">1 added file sharing access (500 MAD)</p>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </div>
+        </div>
+      )}
+      
+      {!hasLocalData && <WalletAlerts wallets={wallets} />}
+      
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Wallet Overview</h2>
+          <Button variant="ghost" size="sm" className="text-primary font-semibold">
+            Manage Wallets
+          </Button>
+        </div>
+        <WalletCards wallets={wallets} />
+      </div>
+      
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Financial Summary</h2>
+          <Button variant="ghost" size="sm" className="text-primary font-semibold">
+            View Details
+          </Button>
+        </div>
+        <SummaryCards />
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2">
+          <div className="bg-card rounded-xl p-4">
+            <h3 className="font-bold text-lg mb-1">Financial Progress</h3>
+            <p className="text-sm text-muted-foreground mb-4">Track your income, expenses and balance over time.</p>
             <ActivityChart transactions={transactions} />
           </div>
         </div>
-        <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-          <div className="bg-muted/30 border-b p-5">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <CalendarClock className="h-5 w-5 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold">Upcoming</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">Expected transactions and returns</p>
-          </div>
-          <div className="p-5">
-            <UpcomingReturns transactions={transactions} />
-          </div>
+        <div>
+          <UpcomingReturns transactions={transactions} />
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-        <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-          <div className="bg-muted/30 border-b p-5">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <PieChart className="h-5 w-5 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold">Spending Categories</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">Where your money is going</p>
-          </div>
-          <div className="p-5">
-            <CategoryPieChart transactions={transactions} />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <CategoryPieChart transactions={transactions} />
         </div>
-        <div className="bg-gradient-to-br from-accent/10 via-background to-primary/10 rounded-xl border border-accent/20 p-8 flex flex-col justify-center items-center shadow-sm">
-          <div className="bg-background rounded-full p-5 shadow-md mb-5 border border-accent/20">
-            <TrendingUp className="h-12 w-12 text-accent" />
+        <div className="bg-card rounded-xl p-6 flex flex-col items-center justify-center text-center">
+          <div className="w-24 h-24 bg-secondary/50 rounded-full flex items-center justify-center mb-4">
+            <BarChart2 className="h-12 w-12 text-gray-400" />
           </div>
-          <h3 className="text-2xl font-bold mb-3 text-center">Need More Insights?</h3>
-          <p className="text-center text-muted-foreground mb-6 max-w-sm">
-            Track more transactions to get detailed reports and personalized financial insights.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button className="hover:border-primary/30 border-1 bg-none hover:bg-primary/20 text-white hover:text-primary" onClick={() => window.location.href = "/transactions"}>
-              <Plus className="h-4 w-4 mr-1.5" /> Add Transaction
-            </Button>
-            <Button variant="outline" className="border-accent/30 border-1 bg-none hover:bg-accent/20 text-white hover:text-accent">
-              View Analytics
-            </Button>
-          </div>
+          <h3 className="font-bold text-lg mb-2">Need More Insights?</h3>
+          <p className="text-sm text-muted-foreground mb-4">Track more transactions to get detailed reports and personalized insights.</p>
+          <Button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-full font-semibold">
+            Generate Reports
+          </Button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
