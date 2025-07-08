@@ -7,7 +7,7 @@ import {
   CardContent,
 } from "@src/components/ui/card";
 import { Badge } from "@src/components/ui/badge";
-import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight, ArrowLeftRight } from "lucide-react";
 import { Transaction, Wallet } from "@/types/types";
 
 interface TransactionCardProps {
@@ -17,22 +17,50 @@ interface TransactionCardProps {
 }
 
 export function TransactionCard({ transaction, wallet, onClick }: TransactionCardProps) {
+  // Function to get border color based on transaction type
+  const getBorderColor = () => {
+    switch(transaction.type) {
+      case "Income": return "border-l-green-500";
+      case "Expense": return "border-l-red-500";
+      case "Transfer": return "border-l-blue-500";
+      default: return "border-l-red-500";
+    }
+  };
+  
+  // Function to get background color based on transaction type
+  const getBgColor = () => {
+    switch(transaction.type) {
+      case "Income": return "bg-green-100";
+      case "Expense": return "bg-red-100";
+      case "Transfer": return "bg-blue-100";
+      default: return "bg-red-100";
+    }
+  };
+  
+  // Function to get text color based on transaction type
+  const getTextColor = () => {
+    switch(transaction.type) {
+      case "Income": return "text-green-600";
+      case "Expense": return "text-red-600";
+      case "Transfer": return "text-blue-600";
+      default: return "text-red-600";
+    }
+  };
+  
   return (
     <Card 
-      className={`transition-all hover:shadow-md cursor-pointer border-l-4 ${
-        transaction.type === "Income" ? "border-l-green-500" : "border-l-red-500"
-      }`}
+      className={`transition-all hover:shadow-md cursor-pointer border-l-4 ${getBorderColor()}`}
       onClick={onClick}
     >
       <CardContent className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className={`rounded-full p-2 flex items-center justify-center ${
-            transaction.type === "Income" ? "bg-green-100" : "bg-red-100"
-          }`}>
+          <div className={`rounded-full p-2 flex items-center justify-center ${getBgColor()}`}>
             {transaction.type === "Income" ? (
-              <ArrowDown className={`h-5 w-5 text-green-600`} />
+              <ArrowDown className={`h-5 w-5 ${getTextColor()}`} />
+            ) : transaction.type === "Transfer" ? (
+              <ArrowLeftRight className={`h-5 w-5 ${getTextColor()}`} />
             ) : (
-              <ArrowUp className={`h-5 w-5 text-red-600`} />
+              <ArrowUp className={`h-5 w-5 ${getTextColor()}`} />
             )}
           </div>
           
@@ -57,10 +85,8 @@ export function TransactionCard({ transaction, wallet, onClick }: TransactionCar
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`font-semibold whitespace-nowrap ${
-            transaction.type === "Income" ? "text-green-600" : "text-red-600"
-          }`}>
-            {transaction.type === "Income" ? "+" : "-"}
+          <span className={`font-semibold whitespace-nowrap ${getTextColor()}`}>
+            {transaction.type === "Income" ? "+" : transaction.type === "Transfer" ? "↔" : "-"}
             {transaction.amount} MAD
           </span>
           <ChevronRight className="h-4 w-4 text-muted-foreground ml-1" />

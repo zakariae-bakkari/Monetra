@@ -34,6 +34,7 @@ import { Wallet as WalletType } from "@src/types/types";
 import { UseFormReturn } from "react-hook-form";
 import { Calendar } from "../ui/calendar";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 export const transactionFormSchema = z
   .object({
@@ -44,9 +45,10 @@ export const transactionFormSchema = z
       .number()
       .positive("Amount must be positive")
       .min(0.01, "Amount must be at least 0.01"),
-    type: z.enum(["Income", "Expense"]),
+    type: z.enum(["Income", "Expense", "Transfer"]),
     category: z.string().min(1, "Please select a category"),
-    wallets: z.string().min(1, "Please select a wallet"),
+    wallets: z.string().min(1, "Please select a source wallet"),
+    destinationWallet: z.string().optional(),
     reason: z.string().optional(),
     hasExpectedReturnDate: z.boolean().default(false),
     expectedReturnDate: z.date().optional().nullable(),
@@ -54,9 +56,20 @@ export const transactionFormSchema = z
   })
   .superRefine(async (data, ctx) => {
     try {
+      // For transfers, validate that source and destination wallets are different
+      if (data.type === "Transfer" && data.wallets === data.destinationWallet) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Source and destination wallets must be different",
+          path: ["destinationWallet"],
+        });
+        return;
+      }
+
       const wallet = await appwriteService.fetchWallet(data.wallets);
 
-      if (wallet && data.type === "Expense") {
+      // Only validate for expense and transfer (since both withdraw money from source wallet)
+      if (wallet && (data.type === "Expense" || data.type === "Transfer")) {
         if (wallet.type !== "Credit Card") {
           const currentBalance = wallet.balance;
           if (currentBalance < data.amount) {
@@ -117,11 +130,15 @@ export function TransactionForm({
     "Gift",
     "Loan",
     "Repayment",
+    "Transfer",
     "Other",
   ];
 
   const watchHasExpectedReturnDate = form.watch("hasExpectedReturnDate");
   const watchTransactionType = form.watch("type");
+  const watchAmount = form.watch("amount");
+  const watchSourceWallet = form.watch("wallets");
+  const watchDestinationWallet = form.watch("destinationWallet");
 
   // Animation variants
   const formVariants = {
@@ -146,6 +163,37 @@ export function TransactionForm({
       },
     },
   };
+
+  useEffect(() => {
+    // When transaction type changes to Transfer, reset or initialize fields
+    if (watchTransactionType === "Transfer" && wallets.length > 1) {
+      // Set a default destination wallet (different from source)
+      const sourceWalletId = form.getValues("wallets");
+      const otherWallets = wallets.filter((w) => w.$id !== sourceWalletId);
+      if (otherWallets.length > 0) {
+        form.setValue("destinationWallet", otherWallets[0].$id);
+      }
+      
+      // Set category to "Other" for transfer transactions
+      form.setValue("category", "Other");
+    }
+  }, [watchTransactionType, wallets, form]);
+
+  // Auto-generate reason for transfers when amount, source, and destination wallets change
+  useEffect(() => {
+    if (watchTransactionType === "Transfer" && 
+        watchAmount && 
+        watchSourceWallet && 
+        watchDestinationWallet) {
+      const sourceWallet = wallets.find(w => w.$id === watchSourceWallet);
+      const destWallet = wallets.find(w => w.$id === watchDestinationWallet);
+      
+      if (sourceWallet && destWallet) {
+        const transferReason = `Transfer ${watchAmount} MAD from ${sourceWallet.name} to ${destWallet.name}`;
+        form.setValue("reason", transferReason);
+      }
+    }
+  }, [watchTransactionType, watchAmount, watchSourceWallet, watchDestinationWallet, wallets, form]);
 
   return (
     <Form {...form}>
@@ -196,6 +244,22 @@ export function TransactionForm({
             >
               <Wallet className="h-4 w-4" />
               Income
+            </Button>
+            <Button
+              type="button"
+              variant={watchTransactionType === "Transfer" ? "default" : "ghost"}
+              className={`
+                rounded-full px-4 gap-2 text-sm
+                ${
+                  watchTransactionType === "Transfer"
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground"
+                }
+              `}
+              onClick={() => form.setValue("type", "Transfer")}
+            >
+              <CreditCard className="h-4 w-4" />
+              Transfer
             </Button>
           </div>
         </motion.div>
@@ -277,7 +341,7 @@ export function TransactionForm({
             control={form.control}
             name="category"
             render={({ field }) => (
-              <FormItem className="col-span-1 w-full">
+              <FormItem className={`col-span-${watchTransactionType === "Transfer" ? "1" : "1"} w-full`}>
                 <FormLabel>Category</FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -304,10 +368,10 @@ export function TransactionForm({
             control={form.control}
             name="wallets"
             render={({ field }) => (
-              <FormItem className="col-span-2">
+              <FormItem className={`${watchTransactionType === "Transfer" ? "col-span-1" : "col-span-2"}`}>
                 <FormLabel className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  Wallet
+                  {watchTransactionType === "Transfer" ? "Source Wallet" : "Wallet"}
                 </FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -334,6 +398,45 @@ export function TransactionForm({
               </FormItem>
             )}
           />
+
+          {watchTransactionType === "Transfer" && (
+            <FormField
+              control={form.control}
+              name="destinationWallet"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel className="flex items-center gap-2">
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                    Destination
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl className="w-full">
+                      <SelectTrigger className="border-border/60 focus-visible:ring-primary/30">
+                        <SelectValue placeholder="Select wallet" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="w-full">
+                      {wallets
+                        .filter(wallet => wallet.$id !== form.watch("wallets"))
+                        .map((wallet) => (
+                          <SelectItem
+                            key={wallet.$id}
+                            value={wallet.$id}
+                            className="flex items-center"
+                          >
+                            {wallet.name.length > 10 ? wallet.name.slice(0, 10) + '...' : wallet.name}
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </motion.div>
 
 
@@ -452,6 +555,8 @@ export function TransactionForm({
             className={
               watchTransactionType === "Income"
                 ? "bg-accent hover:bg-accent/90"
+                : watchTransactionType === "Transfer"
+                ? "bg-secondary hover:bg-secondary/90"
                 : "bg-primary hover:bg-primary/90"
             }
           >
@@ -461,7 +566,7 @@ export function TransactionForm({
                 Processing...
               </>
             ) : (
-              `Save ${watchTransactionType === "Income" ? "Income" : "Expense"}`
+              `Save ${watchTransactionType}`
             )}
           </Button>
         </motion.div>

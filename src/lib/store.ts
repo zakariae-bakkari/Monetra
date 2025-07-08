@@ -79,30 +79,32 @@ export class AppwriteService {
   // ============== TRANSACTION OPERATIONS ===============
   async createTransaction(data: Omit<Transaction, '$id' | 'userId'>, userId: string) {
     try {
-      // Ensure dates are properly formatted for Appwrite
-      const formattedData: Omit<Transaction, 'hasExpectedReturnDate'> & { userId: string } = {
-        ...data,
+      // Create a clean object with only the fields that exist in Appwrite schema
+      const cleanData: Omit<Transaction, '$id'> = {
         date: data.date instanceof Date ? data.date.toISOString() : data.date,
-        userId
+        amount: Number(data.amount), // Ensure amount is a valid number
+        type: data.type,
+        category: data.category,
+        wallets: data.wallets,
+        userId,
+        reason: data.reason || "",
+        notes: data.notes || "",
       };
 
-      // Only include expectedReturnDate if hasExpectedReturnDate is true
-      if (data.hasExpectedReturnDate && data.expectedReturnDate) {
-        formattedData.expectedReturnDate = data.expectedReturnDate instanceof Date ? 
+      // Only include expectedReturnDate if it exists and is valid
+      if (data.expectedReturnDate) {
+        cleanData.expectedReturnDate = data.expectedReturnDate instanceof Date ? 
           data.expectedReturnDate.toISOString() : data.expectedReturnDate;
-      } else {
-        // If hasExpectedReturnDate is false or undefined, make sure expectedReturnDate is not included
-        delete formattedData.expectedReturnDate;
       }
 
-      // Remove the hasExpectedReturnDate field as it's not part of the Appwrite schema
-      delete formattedData.hasExpectedReturnDate;
-
+      // Log the clean data being sent to Appwrite
+      console.log("Creating transaction with data:", cleanData);
+      
       const doc = await databases.createDocument(
         DB_ID,
         TRANSACTIONS_COLLECTION_ID,
         ID.unique(),
-        formattedData
+        cleanData
       );
       return doc;
     } catch (error) {

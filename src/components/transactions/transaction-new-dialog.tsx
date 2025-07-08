@@ -31,6 +31,7 @@ export function TransactionNewDialog({ open, onClose, onTransactionAdded, select
       type: "Expense",
       category: "Other",
       wallets: "",
+      destinationWallet: "",
       reason: "",
       hasExpectedReturnDate: false,
       expectedReturnDate: null,
@@ -93,17 +94,43 @@ export function TransactionNewDialog({ open, onClose, onTransactionAdded, select
     
     setIsSubmitting(true);
     try {
-      // Create transaction using AppwriteService
-      await appwriteService.createTransaction(data, userId);
+      // Store destinationWallet ID for transfers before removing it
+      const destinationWalletId = data.destinationWallet;
       
-      // Update wallet balance if this is an expense or income
-      if (data.type === 'Income' || data.type === 'Expense') {
+      // For all transaction types, ensure proper formatting of data before sending to Appwrite
+      const transactionData = {
+        date: data.date,
+        amount: Number(data.amount), // Ensure amount is a number
+        type: data.type,
+        category: data.type === 'Transfer' ? "Other" : data.category, // Use "Other" for Transfer transactions
+        wallets: data.wallets,
+        reason: data.reason || "",
+        notes: data.notes || "",
+        hasExpectedReturnDate: data.hasExpectedReturnDate,
+        expectedReturnDate: data.expectedReturnDate
+      };
+      
+      // Only add expectedReturnDate if hasExpectedReturnDate is true
+      if (data.hasExpectedReturnDate && data.expectedReturnDate) {
+        transactionData.expectedReturnDate = data.expectedReturnDate;
+      }
+      
+      // Handle wallet balance updates based on transaction type
+      if (data.type === 'Income') {
+        // For Income: Add to wallet balance
         try {
           const wallet = await appwriteService.fetchWallet(data.wallets);
           if (wallet) {
-            const balanceChange = data.type === 'Income' ? data.amount : -data.amount;
             await appwriteService.updateWallet(wallet.$id, { 
-              balance: wallet.balance + balanceChange 
+              balance: wallet.balance + Number(data.amount) 
+            });
+            
+            // Create transaction after successful wallet update
+            await appwriteService.createTransaction(transactionData, userId);
+            
+            toast({
+              title: "Income Added",
+              description: `Successfully added ${data.amount} MAD to ${wallet.name}`
             });
           }
         } catch (err) {
@@ -114,12 +141,94 @@ export function TransactionNewDialog({ open, onClose, onTransactionAdded, select
             variant: "destructive",
           });
         }
+      } else if (data.type === 'Expense') {
+        // For Expense: Subtract from wallet balance
+        try {
+          const wallet = await appwriteService.fetchWallet(data.wallets);
+          if (wallet) {
+            await appwriteService.updateWallet(wallet.$id, { 
+              balance: wallet.balance - Number(data.amount) 
+            });
+            
+            // Create transaction after successful wallet update
+            await appwriteService.createTransaction(transactionData, userId);
+            
+            toast({
+              title: "Expense Recorded",
+              description: `Successfully recorded expense of ${data.amount} MAD from ${wallet.name}`
+            });
+          }
+        } catch (err) {
+          console.error("Error updating wallet balance:", err);
+          toast({
+            title: "Warning",
+            description: "Transaction created but wallet balance update failed",
+            variant: "destructive",
+          });
+        }
+      } else if (data.type === 'Transfer' && destinationWalletId) {
+        // For Transfer: Subtract from source wallet and add to destination wallet
+        try {
+          // First get both wallets
+          const [sourceWallet, destWallet] = await Promise.all([
+            appwriteService.fetchWallet(data.wallets),
+            appwriteService.fetchWallet(destinationWalletId)
+          ]);
+          
+          // Verify source wallet has sufficient funds (additional safety check)
+          if (sourceWallet && sourceWallet.type !== "Credit Card" && sourceWallet.balance < Number(data.amount)) {
+            toast({
+              title: "Transfer Failed",
+              description: `Insufficient funds in ${sourceWallet.name}. Available: ${sourceWallet.balance.toFixed(2)} MAD`,
+              variant: "destructive",
+            });
+            return; // Stop processing if insufficient funds
+          }
+          
+          // For credit cards, check against credit limit if set
+          if (sourceWallet && sourceWallet.type === "Credit Card" && sourceWallet.creditLimit) {
+            const potentialBalance = sourceWallet.balance - Number(data.amount);
+            if (Math.abs(potentialBalance) > sourceWallet.creditLimit) {
+              toast({
+                title: "Transfer Failed",
+                description: `This transfer would exceed the credit limit of ${sourceWallet.creditLimit.toFixed(2)} MAD`,
+                variant: "destructive",
+              });
+              return; // Stop processing if exceeding credit limit
+            }
+          }
+          
+          // Update both wallets in parallel
+          if (sourceWallet && destWallet) {
+            await Promise.all([
+              // Subtract from source wallet
+              appwriteService.updateWallet(sourceWallet.$id, {
+                balance: sourceWallet.balance - Number(data.amount)
+              }),
+              // Add to destination wallet
+              appwriteService.updateWallet(destWallet.$id, {
+                balance: destWallet.balance + Number(data.amount)
+              })
+            ]);
+            
+            // Create transaction after successful wallet updates
+            await appwriteService.createTransaction(transactionData, userId);
+            
+            toast({
+              title: "Transfer Complete",
+              description: `Successfully transferred ${data.amount} MAD from ${sourceWallet.name} to ${destWallet.name}`,
+            });
+          }
+        } catch (err) {
+          console.error("Error processing wallet transfer:", err);
+          toast({
+            title: "Warning",
+            description: "Transaction failed. Please check your wallet balances and try again.",
+            variant: "destructive",
+          });
+          return; // Stop processing on error
+        }
       }
-      
-      toast({
-        title: "Success",
-        description: "Transaction created successfully",
-      });
       
       // Reset form and close dialog
       form.reset();

@@ -95,7 +95,7 @@ export default function CalendarPage() {
 
   // Calculate daily balances
   const dailyBalances = useMemo(() => {
-    const balances: Record<string, { income: number; expense: number }> = {};
+    const balances: Record<string, { income: number; expense: number; transfer: number }> = {};
 
     for (const dateKey in transactionsByDate) {
       const dayTransactions = transactionsByDate[dateKey];
@@ -106,8 +106,12 @@ export default function CalendarPage() {
       const expense = dayTransactions
         .filter((t) => t.type === "Expense")
         .reduce((sum, t) => sum + t.amount, 0);
+        
+      const transfer = dayTransactions
+        .filter((t) => t.type === "Transfer")
+        .reduce((sum, t) => sum + t.amount, 0);
 
-      balances[dateKey] = { income, expense };
+      balances[dateKey] = { income, expense, transfer };
     }
 
     return balances;
@@ -233,6 +237,7 @@ export default function CalendarPage() {
               const dayBalance = dailyBalances[dateKey] || {
                 income: 0,
                 expense: 0,
+                transfer: 0,
               };
               const net = dayBalance.income - dayBalance.expense;
               const hasTransactions = dayTransactions.length > 0;
@@ -294,7 +299,9 @@ export default function CalendarPage() {
                                       "font-semibold",
                                       t.type === "Income" 
                                         ? "text-green-600 dark:text-green-400"
-                                        : "text-red-600 dark:text-red-400"
+                                        : t.type === "Expense"
+                                        ? "text-red-600 dark:text-red-400"
+                                        : "text-blue-600 dark:text-blue-400"
                                     )}
                                   >
                                     {t.type === "Income" ? "+" : "-"}
@@ -314,6 +321,13 @@ export default function CalendarPage() {
                                 <span className="text-sm">Expense</span>
                                 <span className="text-red-600 dark:text-red-400 text-sm font-medium">
                                   -{dayBalance.expense.toFixed(2)} MAD
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm">Transfer</span>
+                                <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
+                                  {dayBalance.transfer > 0 ? "+" : "-"}
+                                  {Math.abs(dayBalance.transfer).toFixed(2)} MAD
                                 </span>
                               </div>
                               <div className="flex justify-between items-center pt-1 border-t">
@@ -359,6 +373,17 @@ export default function CalendarPage() {
                           +{dayBalance.income.toFixed(0)} MAD
                         </div>
                       )}
+                      {dayBalance.transfer !== 0 && (
+                        <div
+                          className={cn(
+                            "text-[10px] md:text-xs font-medium rounded-md px-1 md:px-1.5 py-0.5 inline-flex justify-center items-center",
+                            "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                          )}
+                        >
+                          {dayBalance.transfer > 0 ? "+" : "-"}
+                          {Math.abs(dayBalance.transfer).toFixed(0)} MAD
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -389,7 +414,7 @@ export default function CalendarPage() {
                 const dateKey = format(day, "yyyy-MM-dd");
                 const dayTransactions = transactionsByDate[dateKey] || [];
                 const hasTransactions = dayTransactions.length > 0;
-                const dayBalance = dailyBalances[dateKey] || { income: 0, expense: 0 };
+                const dayBalance = dailyBalances[dateKey] || { income: 0, expense: 0, transfer: 0 };
                 const net = dayBalance.income - dayBalance.expense;
                 
                 if (!hasTransactions) return null;
@@ -437,7 +462,9 @@ export default function CalendarPage() {
                               "font-semibold",
                               t.type === "Income" 
                                 ? "text-green-600 dark:text-green-400"
-                                : "text-red-600 dark:text-red-400"
+                                : t.type === "Expense"
+                                ? "text-red-600 dark:text-red-400"
+                                : "text-blue-600 dark:text-blue-400"
                             )}
                           >
                             {t.type === "Income" ? "+" : "-"}

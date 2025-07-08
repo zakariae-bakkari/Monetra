@@ -3,9 +3,17 @@
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
+import type { ClassNames } from "react-day-picker"
 
 import { cn } from "@src/lib/utils"
 import { buttonVariants } from "@src/components/ui/button"
+
+// Add custom properties to the existing ClassNames type
+type CustomClassNames = ClassNames & {
+  day_income?: string
+  day_expense?: string
+  day_transfer?: string
+}
 
 function Calendar({
   className,
@@ -57,8 +65,12 @@ function Calendar({
         day_range_middle:
           "aria-selected:bg-accent/20 aria-selected:text-accent-foreground",
         day_hidden: "invisible",
+        // Add custom styling for different transaction types
+        day_income: "bg-green-500/20 text-green-700 dark:text-green-400 font-medium",
+        day_expense: "bg-red-500/20 text-red-700 dark:text-red-400 font-medium",
+        day_transfer: "bg-blue-500/20 text-blue-700 dark:text-blue-400 font-medium",
         ...classNames,
-      }}
+      } as CustomClassNames}
       components={{
         IconLeft: ({ className, ...props }) => (
           <ChevronLeft className={cn("size-4", className)} {...props} />

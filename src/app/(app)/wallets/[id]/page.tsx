@@ -74,9 +74,10 @@ export default function WalletDetail() {
       transactions.forEach(tx => {
         if (tx.type === "Income") {
           totalIncome += tx.amount;
-        } else {
+        } else if (tx.type === "Expense") {
           totalExpense += tx.amount;
         }
+        // For transfer transactions, we don't add them to either total
       });
       
       setTxStats({ income: totalIncome, expense: totalExpense });
@@ -372,12 +373,15 @@ export default function WalletDetail() {
                       </div>
                     </div>
                     <span 
-                      className={`font-semibold ${tx.type === "Income" 
-                        ? "text-emerald-600 dark:text-emerald-400" 
-                        : "text-rose-600 dark:text-rose-400"
+                      className={`font-semibold ${
+                        tx.type === "Income" 
+                          ? "text-emerald-600 dark:text-emerald-400" 
+                          : tx.type === "Transfer"
+                            ? "text-blue-600 dark:text-blue-400"
+                            : "text-rose-600 dark:text-rose-400"
                       }`}
                     >
-                      {tx.type === "Income" ? "+" : "-"}
+                      {tx.type === "Income" ? "+" : tx.type === "Transfer" ? "↔" : "-"}
                       {tx.amount.toFixed(2)} MAD
                     </span>
                   </div>

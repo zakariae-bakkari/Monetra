@@ -14,7 +14,7 @@ export type Category =
   | "Repayment" 
   | "Other";
 
-export type TransactionType = "Income" | "Expense";
+export type TransactionType = "Income" | "Expense" | "Transfer";
 
 export interface WalletData {
   $id: string;
