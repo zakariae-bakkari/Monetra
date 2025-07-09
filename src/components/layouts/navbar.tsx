@@ -75,7 +75,7 @@ export default function Navbar() {
     <aside className="bg-sidebar border-r border-sidebar-border w-full h-16 fixed bottom-0 flex md:w-16 md:h-screen md:flex-col md:py-6 md:static">
       <div className="flex items-center justify-between w-full px-4 md:px-0 md:flex-col md:items-center md md:gap-10 h-full">
         <nav className="flex items-center justify-evenly w-full md:flex-col md:space-y-6 md:items-center">
-          <div className="mb-10 text-primary hidden md:block">
+          <div className="mb-10 text-primary hidden md:block cursor-pointer" onClick={() => window.location.href = "/"}>
             <BarChart className="h-6 w-6" />
           </div>
           {navItems.map((item) => {
