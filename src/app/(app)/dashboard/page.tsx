@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Transaction, Wallet } from "@/types/types";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const currentMonth = format(new Date(), "MMMM yyyy");
@@ -26,9 +27,9 @@ export default function DashboardPage() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [importing, setImporting] = useState(false);
   const [hasLocalData, setHasLocalData] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const initializeData = async () => {
@@ -65,92 +66,6 @@ export default function DashboardPage() {
     initializeData();
   }, [toast]);
 
-  const importLocalData = async () => {
-    setImporting(true);
-    try {
-      const localTransactions = localStorage.getItem('transactions');
-      const localWallets = localStorage.getItem('wallets');
-      
-      if (!localTransactions && !localWallets) {
-        toast({
-          title: "No local data found",
-          description: "There is no local data to import",
-        });
-        return;
-      }
-      
-      const userId = (await account.get()).$id;
-      
-      // Import wallets first, then transactions that reference those wallets
-      if (localWallets) {
-        const parsedWallets = JSON.parse(localWallets);
-        for (const wallet of parsedWallets) {
-          // Remove any existing IDs to create fresh entries
-          delete wallet.$id;
-          wallet.userId = userId;
-          
-          await appwriteService.createWallet(wallet, userId);
-        }
-      }
-      
-      if (localTransactions) {
-        const parsedTransactions = JSON.parse(localTransactions);
-        // Re-fetch wallets to get their new IDs
-        const updatedWallets = await appwriteService.fetchWallets(userId);
-        
-        // Create a mapping of local wallet name -> new wallet ID
-        const walletMapping: Record<string, string> = {};
-        updatedWallets.forEach(w => {
-          walletMapping[w.name] = w.$id;
-        });
-        
-        for (const tx of parsedTransactions) {
-          // Remove any existing IDs to create fresh entries
-          delete tx.$id;
-          tx.userId = userId;
-          
-          // Replace wallet references with the new wallet IDs
-          if (typeof tx.wallets === 'string') {
-            const oldWalletName = tx.wallets;
-            tx.wallets = walletMapping[oldWalletName] || tx.wallets;
-          } else if (Array.isArray(tx.wallets)) {
-            tx.wallets = tx.wallets.map((w: string) => walletMapping[w] || w);
-          }
-          
-          await appwriteService.createTransaction(tx, userId);
-        }
-      }
-      
-      // Refresh the data
-      const [refreshedWallets, refreshedTransactions] = await Promise.all([
-        appwriteService.fetchWallets(userId),
-        appwriteService.fetchTransactions(userId)
-      ]);
-      
-      setWallets(refreshedWallets);
-      setTransactions(refreshedTransactions);
-      setHasLocalData(false);
-      
-      // Clear the local storage
-      localStorage.removeItem('transactions');
-      localStorage.removeItem('wallets');
-      
-      toast({
-        title: "Import successful",
-        description: "Your local data has been imported successfully",
-      });
-    } catch (error) {
-      console.error("Error importing local data:", error);
-      toast({
-        title: "Import failed",
-        description: "There was an error importing your local data",
-        variant: "destructive",
-      });
-    } finally {
-      setImporting(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh]">
@@ -179,15 +94,14 @@ export default function DashboardPage() {
                 <p className="text-sm text-muted-foreground">Unusual payment added to your sub-accounts</p>
               </div>
             </div>
-            <Button
+            {/* <Button
               size="sm"
-              onClick={importLocalData}
-              disabled={importing}
+              onClick={() => router.push("/alerts")}
               variant="ghost"
               className="text-primary font-semibold"
             >
               View All
-            </Button>
+            </Button> */}
           </div>
           <div className="mt-4 p-3 bg-secondary/50 rounded-lg flex justify-between items-center">
             <p className="text-sm">1 added file sharing access (500 MAD)</p>
@@ -201,7 +115,7 @@ export default function DashboardPage() {
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Wallet Overview</h2>
-          <Button variant="ghost" size="sm" className="text-primary font-semibold">
+          <Button variant="ghost" size="sm" className="text-primary font-semibold" onClick={() => router.push("/wallets")}>
             Manage Wallets
           </Button>
         </div>
@@ -211,7 +125,7 @@ export default function DashboardPage() {
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Financial Summary</h2>
-          <Button variant="ghost" size="sm" className="text-primary font-semibold">
+          <Button variant="ghost" size="sm" className="text-primary font-semibold" onClick={() => router.push("/transactions")}>
             View Details
           </Button>
         </div>

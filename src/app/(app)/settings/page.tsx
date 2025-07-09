@@ -626,6 +626,6 @@ export default function SettingsPage() {
   //   </div>
   // );
  return (
-  <span>settings will comme soon</span>
+  <span className="flex justify-center items-center text-5xl">settings will comme soon</span>
  )
 }

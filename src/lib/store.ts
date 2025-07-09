@@ -97,8 +97,6 @@ export class AppwriteService {
           data.expectedReturnDate.toISOString() : data.expectedReturnDate;
       }
 
-      // Log the clean data being sent to Appwrite
-      console.log("Creating transaction with data:", cleanData);
       
       const doc = await databases.createDocument(
         DB_ID,
@@ -128,8 +126,6 @@ export class AppwriteService {
         expectedReturnDate: doc.expectedReturnDate ? new Date(doc.expectedReturnDate) : null
       }));
       
-      console.log("Fetched transactions:", transactions);
-
       return transactions;
     } catch (error) {
       console.error("Error fetching transactions:", error);
