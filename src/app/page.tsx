@@ -60,7 +60,7 @@ export default function HomePage() {
     <div className="min-h-screen">
       <Button
         size="lg"
-        className="w-full sm:w-auto px-6 py-2 rounded-full bg-gradient-to-r from-primary/80 to-accent/80 text-white hover:from-primary hover:to-accent fixed top-4 right-4 z-50 shadow-lg transition-all flex items-center gap-2"
+        className="w-full sm:w-auto px-6 py-2 rounded-full bg-gradient-to-r from-primary/80 to-accent/80 text-white hover:from-primary hover:to-accent fixed top-4 sm:right-4 z-50 shadow-lg transition-all flex items-center gap-2"
         onClick={() => router.push("/dashboard")}
       >
         <PieChart className="h-4 w-4" />
